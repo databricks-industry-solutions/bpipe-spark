@@ -41,6 +41,22 @@ spark \
 | Delivery mode      | request / response |
 | Spark mode      | batch |
 
+#### HistoricalDataRequest
+
+```python
+spark \
+  .read \
+  .format("//blp/refdata") \
+  .option("serviceName", "HistoricalDataRequest") \
+  .option("serviceHost", "127.0.0.1") \
+  .option("servicePort", 8954) \
+  .option("correlationId", 999) \
+  .option("fields", "['BID', 'ASK']") \
+  .option("securities", "['SPY US EQUITY','MSFT US EQUITY','AAPL 150117C00600000 EQUITY']") \
+  .option("startDate", "2022-01-01") \
+  .load()
+```
+
 #### ReferenceDataRequest
 
 ```python
