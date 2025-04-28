@@ -8,10 +8,6 @@ We introduce a lightweight, open-source connector that allows Databricks custome
 
 *We are building an open-source B-Pipe to Spark connector to radically simplify market data ingestion, unlocking real-time financial analytics on Databricks — without the traditional complexity of enterprise middleware.* - Antoine Amend, Financial Services GTM Leader.
 
-## Reference Architecture
-
-![images/smart_partitioning.png]
-
 ## Authors
 <antoine.amend@databricks.com>
 
