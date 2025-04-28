@@ -1,10 +1,8 @@
 <img src=https://raw.githubusercontent.com/databricks-industry-solutions/.github/main/profile/solacc_logo.png width="600px">
 
-## B-PIPE spark reader
-TODO: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+## B-Pipe spark reader
 
 ## Reference Architecture
-IMAGE TO REFERENCE ARCHITECTURE
 
 ## Authors
 <antoine.amend@databricks.com>
@@ -13,11 +11,9 @@ IMAGE TO REFERENCE ARCHITECTURE
 
 ### Market data
 
-TODO: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
 |                |  |
 |----------------| ----------- |
-| B-pipe service | `//blp/mktdata` |
+| B-Pipe service | `//blp/mktdata` |
 | Delivery mode      | publish / subscribe |
 | Spark mode      | streaming |
 
@@ -35,17 +31,13 @@ spark \
 
 ### Reference data
 
-TODO: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-
 |                |  |
 |----------------| ----------- |
-| B-pipe service | `//blp/refdata` |
+| B-Pipe service | `//blp/refdata` |
 | Delivery mode      | request / response |
 | Spark mode      | batch |
 
 #### ReferenceDataRequest
-
-TODO: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 ```python
 spark \
@@ -56,14 +48,12 @@ spark \
   .option("servicePort", 8954) \
   .option("correlationId", 999) \
   .option("fields", "['PX_LAST','BID','ASK','TICKER','CHAIN_TICKERS']") \
-  .option("securities", "['SPY US EQUITY','MSFT US EQUITY','AAPL 150117C00600000 EQUITY']")
+  .option("securities", "['SPY US EQUITY','MSFT US EQUITY','AAPL 150117C00600000 EQUITY']") \
   .option("overrides", "{'CHAIN_PUT_CALL_TYPE_OVRD':'C','CHAIN_POINTS_OVRD':'4','CHAIN_EXP_DT_OVRD':'20141220'}") \
   .load()
 ```
 
 #### IntradayTickRequest
-
-TODO: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 ```python
 spark \
@@ -80,8 +70,6 @@ spark \
 ```
 
 #### IntradayBarRequest
-
-TODO: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 
 ```python
 spark \
@@ -100,14 +88,14 @@ spark \
 
 ## Install
 
-To work, one would need to download bpipe library available on DATA<GO> [website](https://data.bloomberg.com/) and run the following maven command.
+To work, one would need to download B-Pipe library available on DATA<GO> [website](https://data.bloomberg.com/) and run the following maven command.
 This will build a jar file that can be installed on a databricks environment (see [cluster libraries](https://docs.databricks.com/aws/en/libraries/cluster-libraries)).
 
 ```shell
 mvn clean install -Dbloomberg.jar.path=/path/to/blpapi-3.19.1-1.jar
 ```
 
-For testing purpose, one can download JAR of bpipe emulator available on [github](https://github.com/Robinson664/bemu) that mimics bpipe basic functionalities with synthetic data.
+For testing purpose, one can download JAR of B-Pipe emulator available on [github](https://github.com/Robinson664/bemu) that mimics B-Pipe basic functionalities with synthetic data.
 
 ## References
 
