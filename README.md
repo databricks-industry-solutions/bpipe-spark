@@ -2,7 +2,15 @@
 
 ## B-Pipe spark reader
 
+Bloomberg B-Pipe (Bloomberg Data License - Real-Time Feed) is an enterprise-grade data feed that provides real-time market data, such as live quotes, trades, order book updates, and reference information, directly into firms’ internal systems. Unlike Bloomberg Terminal (for humans), B-Pipe powers automated trading platforms, risk engines, portfolio systems, and analytics applications. It is designed for low-latency, high-reliability, institutional use.
+Data from B-Pipe often must be published into a firm’s internal message bus (e.g. Kafka) to decouple raw Bloomberg sessions from consuming applications, adding operational overhead, increasing latency and requiring complex mapping and transformation.
+We introduce a lightweight, open-source connector that allows Databricks customers to directly stream B-Pipe data into Spark (and Spark Streaming) pipelines without relying on intermediate enterprise buses or heavy middleware, simplifying architecture and enabling real-time analytics whilst ensuring built-in support for bloomberg entitlements and audit trails through unity catalog.
+
+*We are building an open-source B-Pipe to Spark connector to radically simplify market data ingestion, unlocking real-time financial analytics on Databricks — without the traditional complexity of enterprise middleware.* - Antoine Amend, Financial Services GTM Leader.
+
 ## Reference Architecture
+
+![images/smart_partitioning.png]
 
 ## Authors
 <antoine.amend@databricks.com>
