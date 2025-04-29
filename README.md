@@ -16,6 +16,13 @@ We introduce a lightweight, open-source connector that allows Databricks custome
 >
 > Antoine Amend, Financial Services GTM Leader
 
+## Reference Architecture
+
+Although B-Pipe market data can be used for a variety of use cases, the same can be directly leveraged for risk management, particularly for Value at Risk (VaR) calculations, by providing the high-frequency, high-quality price inputs necessary to model market exposure accurately.
+We represent below how this library can be used to simplify risk management practices on the Databricks Intelligence Platform.
+
+![reference_architecture.png](images%2Freference_architecture.png)
+
 ## Usage
 
 ### Market data
