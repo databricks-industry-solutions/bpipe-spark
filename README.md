@@ -1,7 +1,7 @@
 <img src=https://raw.githubusercontent.com/databricks-industry-solutions/.github/main/profile/solacc_logo.png width="600px">
 
 
-[![DBR](https://img.shields.io/badge/DBR-15.4-red?logo=databricks&style=for-the-badge)](https://docs.databricks.com/release-notes/runtime/15.4.html)
+[![DBR](https://img.shields.io/badge/DBR-15.4_LTS-red?logo=databricks&style=for-the-badge)](https://docs.databricks.com/aws/en/release-notes/runtime/15.4lts.html)
 [![CLOUD](https://img.shields.io/badge/CLOUD-ALL-blue?style=for-the-badge)](https://databricks.com/try-databricks)
 
 ## B-Pipe spark reader
