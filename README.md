@@ -2,7 +2,7 @@
 
 
 [![DBR](https://img.shields.io/badge/DBR-15.4-red?logo=databricks&style=for-the-badge)](https://docs.databricks.com/release-notes/runtime/15.4.html)
-[![CLOUD](https://img.shields.io/badge/CLOUD-ALL-blue?logo=googlecloud&style=for-the-badge)](https://databricks.com/try-databricks)
+[![CLOUD](https://img.shields.io/badge/CLOUD-ALL-blue?style=for-the-badge)](https://databricks.com/try-databricks)
 
 ## B-Pipe spark reader
 
@@ -151,7 +151,9 @@ We support 3 modes of partitioning.
 - **Partition By Security**: for B-Pipe requests with multiple `securities` provided as argument, we can easily distribute multiple securities to multiple requests. Suboptimal in specific cases where portfolio is made of securities of different liquidity (different traded volumes), this might remove the bottleneck of streaming an entire portfolio through 1 single request. 
 - **Smart Partitioning** (advanced): for B-Pipe requests with multiple `securities` provided as argument, we can explicitly tell framework which securities will be bundled together across multiple partitions, ensuring better latency and resilience in a distributed environment. 
 
-See notebook [02_bpipe_partitioning.ipynb](databricks%2F02_bpipe_partitioning.ipynb) for more information about partitioning.
+See notebook [02_bpipe_partitioning.ipynb](databricks%2F02_bpipe_partitioning.ipynb) for more information about partitioning. This partitioning logic can be visualized as follows
+
+![images](images/smart_partitioning.png)
 
 ## Install
 
