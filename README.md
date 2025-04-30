@@ -195,6 +195,7 @@ Any issues discovered through the use of this project should be filed as GitHub 
 &copy; 2025 Databricks, Inc. All rights reserved. The source in this project is provided subject to the Databricks License [https://databricks.com/db-license-source].
 Code does not contain external libaries besides those included in the Databricks supported runtime.
 
-| library                                | description             | license    | source                                              |
-|----------------------------------------|-------------------------|------------|-----------------------------------------------------|
-
+| library      | description            | license    | source                                              |
+|--------------|------------------------|------------|-----------------------------------------------------|
+| Scala        |high-level programming language|Apache 2.0|https://www.scala-lang.org/license|
+| Apache Spark |distributed computing framework|Apache 2.0|https://spark.apache.org/|
