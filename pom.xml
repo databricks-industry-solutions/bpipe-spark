@@ -56,8 +56,7 @@
     </distributionManagement>
 
     <properties>
-        <!--https://github.com/Robinson664/bemu/tree/master-->
-        <minimum.coverage>80</minimum.coverage>
+        <minimum.coverage>30</minimum.coverage>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.12.14</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
@@ -99,7 +98,7 @@
         <dependency>
             <groupId>com.bloomberglp</groupId>
             <artifactId>blpapi</artifactId>
-            <version>3.16.1-2</version>
+            <version>3.25.3-1</version>
             <scope>system</scope>
             <systemPath>${bloomberg.jar.path}</systemPath>
         </dependency>
@@ -166,22 +165,61 @@
             <!-- ************************ -->
 
             <!-- Scala test plugin -->
-
+            <!-- To use the ScalaTest Maven plugin, you need to disable SureFire and enable ScalaTest -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest-maven-plugin</artifactId>
                 <version>2.2.0</version>
                 <configuration>
-                    <reportsDirectory>${project.build.directory}/test-reports</reportsDirectory>
+                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                    <junitxml>.</junitxml>
+                    <filereports>WDF TestSuite.txt</filereports>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>test</id>
+                        <id>unit-test</id>
                         <goals>
                             <goal>test</goal>
                         </goals>
+                        <configuration>
+                            <!-- These tests require live B-Pipe environment tunnelled on localhost -->
+                            <!-- We only enable those tests through profile -PBpipe -->
+                            <tagsToExclude>com.databricks.fsi.bpipe.BPipeEnvironmentTest</tagsToExclude>
+                        </configuration>
+                        <phase>test</phase>
                     </execution>
                 </executions>
+            </plugin>
+
+            <!-- Code coverage -->
+
+            <plugin>
+                <groupId>org.scoverage</groupId>
+                <artifactId>scoverage-maven-plugin</artifactId>
+                <version>1.4.11</version>
+                <executions>
+                    <execution>
+                        <id>scoverage-report</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>report</goal>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <minimumCoverage>${minimum.coverage}</minimumCoverage>
+                    <failOnMinimumCoverage>true</failOnMinimumCoverage>
+                    <scalaVersion>${scala.version}</scalaVersion>
+                </configuration>
             </plugin>
 
             <!-- ************************ -->
@@ -264,5 +302,43 @@
 
         </plugins>
     </build>
+
+    <profiles>
+
+        <!-- Some tests require live B-Pipe environment tunnelled on localhost -->
+        <!-- We only enable those integration tests through profile -PBpipe -->
+        <profile>
+            <id>Bpipe</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.scalatest</groupId>
+                        <artifactId>scalatest-maven-plugin</artifactId>
+                        <version>2.2.0</version>
+                        <configuration>
+                            <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                            <junitxml>.</junitxml>
+                            <filereports>WDF TestSuite.txt</filereports>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>integration-test</id>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <phase>integration-test</phase>
+                                <configuration>
+                                    <tagsToInclude>com.databricks.fsi.bpipe.BPipeEnvironmentTest</tagsToInclude>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

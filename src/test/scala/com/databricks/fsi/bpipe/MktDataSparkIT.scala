@@ -5,6 +5,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
 
+@BPipeEnvironmentTest
 class MktDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
   var spark: SparkSession = _

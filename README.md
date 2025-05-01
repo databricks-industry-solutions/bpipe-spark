@@ -3,6 +3,7 @@
 
 [![DBR](https://img.shields.io/badge/DBR-15.4_LTS-red?logo=databricks&style=for-the-badge)](https://docs.databricks.com/aws/en/release-notes/runtime/15.4lts.html)
 [![CLOUD](https://img.shields.io/badge/CLOUD-ALL-blue?style=for-the-badge)](https://databricks.com/try-databricks)
+[![BPIPE](https://img.shields.io/badge/BPIPE-3.25.3--1-orange?style=for-the-badge)](https://data.bloomberg.com/)
 
 ## B-Pipe spark reader
 

@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat
 import java.time.ZonedDateTime
 import java.util.Date
 
+@BPipeEnvironmentTest
 class RefDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
   var spark: SparkSession = _
