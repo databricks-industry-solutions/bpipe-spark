@@ -72,12 +72,13 @@ object MktDataHandler {
         if (hasResponseError(message) || hasSubscriptionFailure(message)) {
           None
         } else {
+          // TODO: Find depreciated replacement
           val security = message.topicName
           val writer = new UnsafeRowWriter(schema.length)
           writer.resetRowWriter()
 
-          val fieldValues = fields.filter(field => message.hasElement(field, true)).map(field => {
-            val fieldData = message.getElement(field)
+          val fieldValues = fields.filter(field => message.hasElement(Name.getName(field), true)).map(field => {
+            val fieldData = message.getElement(Name.getName(field))
             (field, fieldData)
           }).toMap
 
@@ -103,12 +104,12 @@ object MktDataHandler {
 
     def hasResponseError(message: Message): Boolean = {
       if (message.messageType().toString.equals("SubscriptionStarted") &&
-        message.hasElement("exceptions", true)) {
-        val exceptions = message.getElement("exceptions")
+        message.hasElement(Name.getName("exceptions"), true)) {
+        val exceptions = message.getElement(Name.getName("exceptions"))
         val errorMessages = (0 until exceptions.numValues()).map(i => {
           val exception = exceptions.getValueAsElement(i)
-          val reason = exception.getElement("reason")
-          reason.getElementAsString("description")
+          val reason = exception.getElement(Name.getName("reason"))
+          reason.getElementAsString(Name.getName("description"))
         }).mkString("\n")
         LOGGER.error(s"[B-PIPE response error]: $errorMessages")
         true
@@ -117,9 +118,9 @@ object MktDataHandler {
 
     def hasSubscriptionFailure(message: Message): Boolean = {
       if (message.messageType().toString.equals("SubscriptionFailure") &&
-        message.hasElement("reason", true)) {
-        val reason = message.getElement("reason")
-        val description = reason.getElementAsString("description")
+        message.hasElement(Name.getName("reason"), true)) {
+        val reason = message.getElement(Name.getName("reason"))
+        val description = reason.getElementAsString(Name.getName("description"))
         LOGGER.error(s"[B-PIPE subscription error]: $description")
         true
       } else false

@@ -1,6 +1,6 @@
 package com.databricks.fsi.bpipe
 
-import com.bloomberglp.blpapi.{Datetime, Element, Request}
+import com.bloomberglp.blpapi.{Datetime, Element, Name, Request}
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.connector.read.InputPartition
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -188,43 +188,43 @@ object BPipeConfig {
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
 
     def appendFields(fields: List[String]): Unit = {
-      fields.foreach(f => request.append("fields", f))
+      fields.foreach(f => request.append(Name.getName("fields"), f))
     }
 
     def appendSecurities(securities: List[String]): Unit = {
-      securities.foreach(s => request.append("securities", s))
+      securities.foreach(s => request.append(Name.getName("securities"), s))
     }
 
     def appendEventTypes(eventTypes: List[String]): Unit = {
-      eventTypes.foreach(e => request.append("eventTypes", e))
+      eventTypes.foreach(e => request.append(Name.getName("eventTypes"), e))
     }
 
     def setSecurity(security: String): Unit = {
-      request.set("security", security)
+      request.set(Name.getName("security"), security)
     }
 
     def setStartDateTime(startDateTime: Date): Unit = {
       val startCalendar = Calendar.getInstance
       startCalendar.setTime(startDateTime)
-      request.set("startDateTime", new Datetime(startCalendar))
+      request.set(Name.getName("startDateTime"), new Datetime(startCalendar))
     }
 
     def setEndDateTime(endDateTime: Date): Unit = {
       val endCalendar = Calendar.getInstance
       endCalendar.setTime(endDateTime)
-      request.set("endDateTime", new Datetime(endCalendar))
+      request.set(Name.getName("endDateTime"), new Datetime(endCalendar))
     }
 
     def setStartDate(startDate: Date): Unit = {
-      request.set("startDate", sdf.format(startDate))
+      request.set(Name.getName("startDate"), sdf.format(startDate))
     }
 
     def setEndDate(endDate: Date): Unit = {
-      request.set("endDate", sdf.format(endDate))
+      request.set(Name.getName("endDate"), sdf.format(endDate))
     }
 
     def setInterval(interval: Int): Unit = {
-      request.set("interval", interval)
+      request.set(Name.getName("interval"), interval)
     }
 
   }
@@ -240,11 +240,11 @@ object BPipeConfig {
       request.appendFields(fields)
       request.appendSecurities(securities)
       if (overrides.nonEmpty) {
-        val overridesElements: Element = request.getElement("overrides")
+        val overridesElements: Element = request.getElement(Name.getName("overrides"))
         overrides.foreach({ case (overrideKey, overrideValue) =>
           val overridesElement: Element = overridesElements.appendElement
-          overridesElement.setElement("fieldId", overrideKey)
-          overridesElement.setElement("value", overrideValue)
+          overridesElement.setElement(Name.getName("fieldId"), overrideKey)
+          overridesElement.setElement(Name.getName("value"), overrideValue)
         })
       }
     }
@@ -287,14 +287,14 @@ object BPipeConfig {
       request.setStartDate(startDate)
       request.setEndDate(endDate)
 
-      if (periodicityAdjustment.isDefined) request.set("periodicityAdjustment", periodicityAdjustment.get)
-      if (periodicitySelection.isDefined) request.set("periodicitySelection", periodicitySelection.get)
-      if (pricingOption.isDefined) request.set("pricingOption", pricingOption.get)
-      if (adjustmentNormal.isDefined) request.set("adjustmentNormal", adjustmentNormal.get)
-      if (adjustmentAbnormal.isDefined) request.set("adjustmentAbnormal", adjustmentAbnormal.get)
-      if (adjustmentSplit.isDefined) request.set("adjustmentSplit", adjustmentSplit.get)
-      if (maxDataPoints.isDefined) request.set("maxDataPoints", maxDataPoints.get)
-      if (overrideOption.isDefined) request.set("overrideOption", overrideOption.get)
+      if (periodicityAdjustment.isDefined) request.set(Name.getName("periodicityAdjustment"), periodicityAdjustment.get)
+      if (periodicitySelection.isDefined) request.set(Name.getName("periodicitySelection"), periodicitySelection.get)
+      if (pricingOption.isDefined) request.set(Name.getName("pricingOption"), pricingOption.get)
+      if (adjustmentNormal.isDefined) request.set(Name.getName("adjustmentNormal"), adjustmentNormal.get)
+      if (adjustmentAbnormal.isDefined) request.set(Name.getName("adjustmentAbnormal"), adjustmentAbnormal.get)
+      if (adjustmentSplit.isDefined) request.set(Name.getName("adjustmentSplit"), adjustmentSplit.get)
+      if (maxDataPoints.isDefined) request.set(Name.getName("maxDataPoints"), maxDataPoints.get)
+      if (overrideOption.isDefined) request.set(Name.getName("overrideOption"), overrideOption.get)
 
     }
 
@@ -354,19 +354,19 @@ object BPipeConfig {
 
     override def buildRequest(request: Request): Unit = {
 
-      request.set("security", security)
+      request.set(Name.getName("security"), security)
       request.setSecurity(security)
       request.appendEventTypes(eventTypes)
       request.setStartDateTime(startDateTime)
       request.setEndDateTime(endDateTime)
 
-      if (includeConditionCodes.isDefined) request.set("includeConditionCodes", includeConditionCodes.get)
-      if (includeBicMicCodes.isDefined) request.set("includeBicMicCodes", includeBicMicCodes.get)
-      if (includeBrokerCodes.isDefined) request.set("includeBrokerCodes", includeBrokerCodes.get)
-      if (includeRpsCodes.isDefined) request.set("includeRpsCodes", includeRpsCodes.get)
-      if (includeExchangeCodes.isDefined) request.set("includeExchangeCodes", includeExchangeCodes.get)
-      if (includeNonPlottableEvents.isDefined) request.set("includeNonPlottableEvents", includeNonPlottableEvents.get)
-      if (returnEids.isDefined) request.set("returnEids", returnEids.get)
+      if (includeConditionCodes.isDefined) request.set(Name.getName("includeConditionCodes"), includeConditionCodes.get)
+      if (includeBicMicCodes.isDefined) request.set(Name.getName("includeBicMicCodes"), includeBicMicCodes.get)
+      if (includeBrokerCodes.isDefined) request.set(Name.getName("includeBrokerCodes"), includeBrokerCodes.get)
+      if (includeRpsCodes.isDefined) request.set(Name.getName("includeRpsCodes"), includeRpsCodes.get)
+      if (includeExchangeCodes.isDefined) request.set(Name.getName("includeExchangeCodes"), includeExchangeCodes.get)
+      if (includeNonPlottableEvents.isDefined) request.set(Name.getName("includeNonPlottableEvents"), includeNonPlottableEvents.get)
+      if (returnEids.isDefined) request.set(Name.getName("returnEids"), returnEids.get)
     }
 
     override def validate(): RefDataTickDataConfig = {
@@ -409,13 +409,13 @@ object BPipeConfig {
       request.setEndDateTime(endDateTime)
       request.setInterval(interval)
 
-      if (eventType.isDefined) request.set("eventType", eventType.get)
-      if (returnEids.isDefined) request.set("returnEids", returnEids.get)
-      if (gapFillInitialBar.isDefined) request.set("gapFillInitialBar", gapFillInitialBar.get)
-      if (adjustmentNormal.isDefined) request.set("adjustmentNormal", adjustmentNormal.get)
-      if (adjustmentAbnormal.isDefined) request.set("adjustmentAbnormal", adjustmentAbnormal.get)
-      if (adjustmentSplit.isDefined) request.set("adjustmentSplit", adjustmentSplit.get)
-      if (adjustmentFollowDPDF.isDefined) request.set("adjustmentFollowDPDF", adjustmentFollowDPDF.get)
+      if (eventType.isDefined) request.set(Name.getName("eventType"), eventType.get)
+      if (returnEids.isDefined) request.set(Name.getName("returnEids"), returnEids.get)
+      if (gapFillInitialBar.isDefined) request.set(Name.getName("gapFillInitialBar"), gapFillInitialBar.get)
+      if (adjustmentNormal.isDefined) request.set(Name.getName("adjustmentNormal"), adjustmentNormal.get)
+      if (adjustmentAbnormal.isDefined) request.set(Name.getName("adjustmentAbnormal"), adjustmentAbnormal.get)
+      if (adjustmentSplit.isDefined) request.set(Name.getName("adjustmentSplit"), adjustmentSplit.get)
+      if (adjustmentFollowDPDF.isDefined) request.set(Name.getName("adjustmentFollowDPDF"), adjustmentFollowDPDF.get)
 
     }
 
