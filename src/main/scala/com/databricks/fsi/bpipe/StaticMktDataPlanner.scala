@@ -46,7 +46,7 @@ object StaticMktDataPlanner {
 
     final val apiConfig = StaticMktDataApiConfig(options)
     final val svcConfig: SvcConfig = serviceName match {
-      case REFERENCE_DATA_REQUEST => RefDataConfig(options)
+      case REFERENCE_DATA_REQUEST => StaticMktDataConfig(options)
       case _ => throw new IllegalArgumentException(s"Unsupported [serviceName] for [$BLP_STATICMKTDATA] service")
     }
     final val timezone = Try(ZoneId.of(options.getOrDefault("timezone", "UTC"))) match {

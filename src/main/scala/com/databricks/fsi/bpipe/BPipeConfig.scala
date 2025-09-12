@@ -284,6 +284,32 @@ object BPipeConfig {
 
   }
 
+  case class StaticMktDataConfig(
+                            securities: List[String] = List.empty,
+                            fields: List[String] = List.empty,
+                            returnEids: Option[Boolean] = None,
+                          ) extends SvcConfig {
+
+    override def buildRequest(request: Request): Unit = {
+      request.appendFields(fields)
+      request.appendSecurities(securities)
+      if (returnEids.isDefined) request.set(Name.getName("returnEids"), returnEids.get)
+    }
+
+    override def validate(): StaticMktDataConfig = {
+      require(securities.nonEmpty, "[securities] needs to be specified")
+      require(fields.nonEmpty, "[fields] needs to be specified")
+      this
+    }
+
+    override def buildPartitions(options: CaseInsensitiveStringMap): Array[InputPartition] = {
+      LOGGER.info("Partitioning Reference data requests")
+      partitionBySecurities(options, securities).map(securities => {
+        this.copy(securities = securities)
+      })
+    }
+  }
+
   case class RefDataHistoricalConfig(
                                       securities: List[String] = List.empty,
                                       fields: List[String] = List.empty,
@@ -475,7 +501,7 @@ object BPipeConfig {
         s"TLS certificate file does not exist")
       require(new java.io.File(options.getString("tlsPrivateKeyPath")).exists(),
         s"TLS private key file does not exist")
-      
+
       StaticMktDataApiConfig(
         serverAddresses = options.getStringList("serverAddresses").toArray,
         serverPort = options.getInt("serverPort"),
@@ -503,6 +529,16 @@ object BPipeConfig {
       MktDataConfig(
         options.getStringList("securities"),
         options.getStringList("fields")
+      )
+    }
+  }
+
+  object StaticMktDataConfig {
+    def apply(options: CaseInsensitiveStringMap): StaticMktDataConfig = {
+      StaticMktDataConfig(
+        options.getStringList("securities"),
+        options.getStringList("fields"),
+        options.getBooleanOpt("returnEids")
       )
     }
   }

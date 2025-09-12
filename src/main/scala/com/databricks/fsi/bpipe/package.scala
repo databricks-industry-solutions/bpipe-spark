@@ -140,6 +140,14 @@ package object bpipe {
       getComplexType[List[String]](key)
     }
 
+    def getStringMapOpt(key: String): Map[String, String] = {
+      if (options.containsKey(key)) getStringMap(key) else Map.empty
+    }
+
+    def getStringMap(key: String): Map[String, String] = {
+      getComplexType[Map[String, String]](key)
+    }
+
     def getComplexType[T](key: String)(implicit m: Manifest[T]): T = {
       require(options.containsKey(key), s"[$key] is not accessible in options")
       Try {
@@ -149,14 +157,6 @@ package object bpipe {
         case Failure(e) =>
           throw new IllegalArgumentException(s"[$key] must be specified as JSON object", e)
       }
-    }
-
-    def getStringMapOpt(key: String): Map[String, String] = {
-      if (options.containsKey(key)) getStringMap(key) else Map.empty
-    }
-
-    def getStringMap(key: String): Map[String, String] = {
-      getComplexType[Map[String, String]](key)
     }
 
   }

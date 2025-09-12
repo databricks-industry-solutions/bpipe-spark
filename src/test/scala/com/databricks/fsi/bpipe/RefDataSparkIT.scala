@@ -12,26 +12,26 @@ import java.util.Date
 @BPipeEnvironmentTest
 class RefDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
-  var spark: SparkSession = _
   val sdf = new SimpleDateFormat("yyyy-MM-dd")
   val aMonthAgo: String = sdf.format(Date.from(ZonedDateTime.now().minusMonths(1).toInstant))
   val aYearAgo: String = sdf.format(Date.from(ZonedDateTime.now().minusYears(1).toInstant))
   val now: String = sdf.format(Date.from(ZonedDateTime.now().toInstant))
+  var spark: SparkSession = _
 
   override protected def beforeAll(): Unit = {
     // Explicitly configure log4j to use our properties file
     System.setProperty("log4j.configuration", "log4j.properties")
-    
+
     // Force log4j to reconfigure
     import org.apache.log4j.LogManager
     LogManager.resetConfiguration()
     LogManager.getRootLogger()
-    
+
     spark = SparkSession.builder()
       .appName(BLP_REFDATA)
-      .master("local[2]")  
+      .master("local[2]")
       .getOrCreate()
-    
+
     // Set Spark context log level to ERROR to minimize noise
     spark.sparkContext.setLogLevel("ERROR")
   }

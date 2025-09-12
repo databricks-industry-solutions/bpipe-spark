@@ -62,7 +62,8 @@
         <scala.binary.version>2.12</scala.binary.version>
         <spark.version>3.5.0</spark.version>
         <java.version>11</java.version>
-        <bloomberg.jar.path>/Users/antoine.amend/Workspace/bloomberg/bpipe-spark/blpapi-3.25.3-1.jar</bloomberg.jar.path>
+        <bloomberg.jar.path>/Users/antoine.amend/Workspace/bloomberg/bpipe-spark/blpapi-3.25.3-1.jar
+        </bloomberg.jar.path>
     </properties>
 
     <dependencies>
@@ -117,7 +118,7 @@
             <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
-        
+
         <!--LOGGING DEPENDENCIES FOR TESTS-->
         <!-- SLF4J to Log4j binding - this connects SLF4J calls to Log4j -->
         <dependency>

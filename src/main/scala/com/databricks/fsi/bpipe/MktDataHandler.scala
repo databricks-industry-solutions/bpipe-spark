@@ -1,10 +1,8 @@
 package com.databricks.fsi.bpipe
 
-import com.bloomberglp.blpapi.SessionOptions.ServerAddress
 import com.bloomberglp.blpapi._
 import com.databricks.fsi.bpipe.BPipeConfig.{MktDataApiConfig, MktDataConfig, SvcConfig}
 import com.databricks.fsi.bpipe.BPipeUtils._
-import org.apache.commons.io.IOUtils
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter
@@ -14,7 +12,6 @@ import org.apache.spark.sql.types.{ArrayType, StringType, StructType}
 import org.apache.spark.unsafe.types.UTF8String
 import org.slf4j.LoggerFactory
 
-import java.io.{File, FileInputStream}
 import java.time.ZoneId
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 import scala.collection.JavaConverters._
@@ -149,7 +146,7 @@ object MktDataHandler {
       // Instantiate new session
       LOGGER.info("Starting new B-PIPE session asynchronously")
       val sessionOptions = new SessionOptions
-      
+
       // MktData uses simple host/port configuration
       sessionOptions.setServerHost(apiConfig.serviceHost)
       sessionOptions.setServerPort(apiConfig.servicePort)

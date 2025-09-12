@@ -7,9 +7,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
-import java.io.{File, FileWriter}
-import java.text.SimpleDateFormat
 import java.nio.file.{Files, Path}
+import java.text.SimpleDateFormat
 import scala.collection.JavaConverters._
 
 class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
@@ -22,7 +21,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     // Create temporary certificate files for StaticMktDataApiConfig tests
     tempCertFile = Files.createTempFile("test-cert", ".p12")
     tempKeyFile = Files.createTempFile("test-key", ".p12")
-    
+
     // Write some dummy content to make the files exist
     Files.write(tempCertFile, "dummy certificate content".getBytes)
     Files.write(tempKeyFile, "dummy key content".getBytes)
@@ -118,7 +117,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     ).asJava)
 
     val config = MktDataApiConfig(options)
-    
+
     config.serviceHost should be("localhost")
     config.servicePort should be(8194)
     config.correlationId should be(12345L)
@@ -143,7 +142,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     ).asJava)
 
     val config = RefDataApiConfig(options)
-    
+
     config.serviceHost should be("127.0.0.1")
     config.servicePort should be(8954)
     config.correlationId should be(999L)
@@ -172,7 +171,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     ).asJava)
 
     val config = StaticMktDataApiConfig(options)
-    
+
     config.serverAddresses should be(Array("gbr.cloudpoint.bloomberg.com", "deu.cloudpoint.bloomberg.com"))
     config.serverPort should be(8194)
     config.tlsCertificatePath should be(tempCertFile.toString)
@@ -252,7 +251,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     ).asJava)
 
     val config = StaticMktDataApiConfig(options)
-    
+
     config.serverAddresses should be(Array("server1.com", "server2.com", "server3.com"))
   }
 
@@ -272,7 +271,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
       val incompleteOptions = new CaseInsensitiveStringMap(
         (validOptions - keyToRemove).asJava
       )
-      
+
       assertThrows[Exception] {
         StaticMktDataApiConfig(incompleteOptions)
       }
