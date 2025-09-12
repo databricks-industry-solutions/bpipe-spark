@@ -19,8 +19,21 @@ class RefDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
   val now: String = sdf.format(Date.from(ZonedDateTime.now().toInstant))
 
   override protected def beforeAll(): Unit = {
-    spark = SparkSession.builder().appName(BLP_REFDATA).master("local[1]").getOrCreate()
-    spark.sparkContext.setLogLevel("OFF")
+    // Explicitly configure log4j to use our properties file
+    System.setProperty("log4j.configuration", "log4j.properties")
+    
+    // Force log4j to reconfigure
+    import org.apache.log4j.LogManager
+    LogManager.resetConfiguration()
+    LogManager.getRootLogger()
+    
+    spark = SparkSession.builder()
+      .appName(BLP_REFDATA)
+      .master("local[2]")  
+      .getOrCreate()
+    
+    // Set Spark context log level to ERROR to minimize noise
+    spark.sparkContext.setLogLevel("ERROR")
   }
 
   override protected def afterAll(): Unit = {
