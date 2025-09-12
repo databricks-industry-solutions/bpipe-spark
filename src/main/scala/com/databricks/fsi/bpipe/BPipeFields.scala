@@ -8,6 +8,7 @@ object BPipeFields {
   object Request {
     val fields: Map[String, DataType] = Map(
       "PX_LAST" -> DoubleType,
+      "LAST_PRICE" -> DoubleType,
       "BID" -> DoubleType,
       "ASK" -> DoubleType,
       "TICKER" -> StringType,

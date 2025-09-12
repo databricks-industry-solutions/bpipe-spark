@@ -11,7 +11,8 @@ import scala.util.{Failure, Success, Try}
 package object bpipe {
 
   val BLP_REFDATA = "//blp/refdata"
-  val BLP_MKDATA = "//blp/mktdata"
+  val BLP_STATICMKTDATA = "//blp/staticmktdata"
+  val BLP_MKTDATA = "//blp/mktdata"
 
   val REFERENCE_DATA_REQUEST = "ReferenceDataRequest"
   val HISTORICAL_DATA_REQUEST = "HistoricalDataRequest"
@@ -23,6 +24,10 @@ package object bpipe {
     HISTORICAL_DATA_REQUEST,
     INTRADAY_BAR_REQUEST,
     INTRADAY_TICK_REQUEST
+  )
+
+  val BLP_STATICMKTDATA_SERVICES: Set[String] = Set(
+    REFERENCE_DATA_REQUEST
   )
 
 
@@ -127,6 +132,14 @@ package object bpipe {
       getComplexType[List[Int]](key)
     }
 
+    def getStringListOpt(key: String): List[String] = {
+      if (options.containsKey(key)) getStringList(key) else List.empty
+    }
+
+    def getStringList(key: String): List[String] = {
+      getComplexType[List[String]](key)
+    }
+
     def getComplexType[T](key: String)(implicit m: Manifest[T]): T = {
       require(options.containsKey(key), s"[$key] is not accessible in options")
       Try {
@@ -136,14 +149,6 @@ package object bpipe {
         case Failure(e) =>
           throw new IllegalArgumentException(s"[$key] must be specified as JSON object", e)
       }
-    }
-
-    def getStringListOpt(key: String): List[String] = {
-      if (options.containsKey(key)) getStringList(key) else List.empty
-    }
-
-    def getStringList(key: String): List[String] = {
-      getComplexType[List[String]](key)
     }
 
     def getStringMapOpt(key: String): Map[String, String] = {

@@ -1,8 +1,10 @@
 package com.databricks.fsi.bpipe
 
+import com.bloomberglp.blpapi.SessionOptions.ServerAddress
 import com.bloomberglp.blpapi._
 import com.databricks.fsi.bpipe.BPipeConfig._
 import com.databricks.fsi.bpipe.BPipeUtils._
+import org.apache.commons.io.IOUtils
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter
@@ -11,6 +13,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 import org.slf4j.LoggerFactory
 
+import java.io.{File, FileInputStream}
 import java.time.ZoneId
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
@@ -19,7 +22,7 @@ object RefDataHandler {
 
   case class RefDataPartitionReaderFactory(
                                             serviceName: String,
-                                            apiConfig: ApiConfig,
+                                            apiConfig: RefDataApiConfig,
                                             schema: StructType,
                                             timezone: ZoneId
                                           ) extends PartitionReaderFactory {
@@ -32,7 +35,7 @@ object RefDataHandler {
   case class RefDataPartitionReader(
                                      serviceName: String,
                                      schema: StructType,
-                                     apiConfig: ApiConfig,
+                                     apiConfig: RefDataApiConfig,
                                      svcConfig: SvcConfig,
                                      timezone: ZoneId
                                    ) extends PartitionReader[InternalRow] {
@@ -47,8 +50,11 @@ object RefDataHandler {
       // Instantiate new session
       LOGGER.info("Starting new B-PIPE session")
       val sessionOptions = new SessionOptions
+      
+      // RefData uses simple host/port configuration  
       sessionOptions.setServerHost(apiConfig.serviceHost)
       sessionOptions.setServerPort(apiConfig.servicePort)
+      
       // TODO: Pass application ID. Not supported in BEMU emulator
       session = new Session(sessionOptions)
       session.start

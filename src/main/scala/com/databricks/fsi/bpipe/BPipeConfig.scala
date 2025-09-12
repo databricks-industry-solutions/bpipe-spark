@@ -50,7 +50,8 @@ object BPipeConfig {
   /**
    * Use might define partitioning strategy to leverage distributed nature of Spark Streaming. With multiple nodes
    * could come multiple requests where each request only processes specific securities
-   * @param options arguments of a spark reader, in form of case insensitive options
+   *
+   * @param options    arguments of a spark reader, in form of case insensitive options
    * @param securities list of securities to be processed
    * @return the list of securities that will be processed in each partition
    */
@@ -109,9 +110,10 @@ object BPipeConfig {
   /**
    * Use might define partitioning strategy to leverage distributed nature of Spark Streaming. With multiple nodes
    * could come multiple requests where each request only processes a specific time window
-   * @param options arguments of a spark reader, in form of case insensitive options
+   *
+   * @param options   arguments of a spark reader, in form of case insensitive options
    * @param startDate the start time for the given historical data request
-   * @param endDate the end time for the given historical data request
+   * @param endDate   the end time for the given historical data request
    * @return the windowed start / end times that will be processed within each partition
    */
   private[bpipe] def partitionByDate(
@@ -146,11 +148,27 @@ object BPipeConfig {
 
   }
 
-  case class ApiConfig(
-                        serviceHost: String,
-                        servicePort: Int,
-                        correlationId: Long
-                      ) extends Serializable
+  case class MktDataApiConfig(
+                               serviceHost: String,
+                               servicePort: Int,
+                               correlationId: Long
+                             ) extends Serializable
+
+  case class StaticMktDataApiConfig(
+                                     serverAddresses: Array[String],
+                                     serverPort: Int,
+                                     tlsCertificatePath: String,
+                                     tlsPrivateKeyPath: String,
+                                     tlsPrivateKeyPassword: String,
+                                     authApplicationName: String,
+                                     correlationId: Long
+                                   ) extends Serializable
+
+  case class RefDataApiConfig(
+                               serviceHost: String,
+                               servicePort: Int,
+                               correlationId: Long
+                             ) extends Serializable
 
   case class MktDataConfig(
                             securities: List[String] = List.empty,
@@ -181,6 +199,7 @@ object BPipeConfig {
 
   /**
    * Helper class to ensure BPipe request is built consistantly across multiple entry points
+   *
    * @param request original request modified with input options like securities, fields, start or end date
    */
   implicit class RequestImpl(request: Request) {
@@ -439,12 +458,42 @@ object BPipeConfig {
 
   }
 
-  object ApiConfig {
-    def apply(options: CaseInsensitiveStringMap): ApiConfig = {
-      ApiConfig(
-        options.getString("serviceHost"),
-        options.getInt("servicePort"),
-        options.getLong("correlationId")
+  object MktDataApiConfig {
+    def apply(options: CaseInsensitiveStringMap): MktDataApiConfig = {
+      MktDataApiConfig(
+        serviceHost = options.getString("serviceHost"),
+        servicePort = options.getInt("servicePort"),
+        correlationId = options.getLong("correlationId")
+      )
+    }
+  }
+
+  object StaticMktDataApiConfig {
+    def apply(options: CaseInsensitiveStringMap): StaticMktDataApiConfig = {
+
+      require(new java.io.File(options.getString("tlsCertificatePath")).exists(),
+        s"TLS certificate file does not exist")
+      require(new java.io.File(options.getString("tlsPrivateKeyPath")).exists(),
+        s"TLS private key file does not exist")
+      
+      StaticMktDataApiConfig(
+        serverAddresses = options.getStringList("serverAddresses").toArray,
+        serverPort = options.getInt("serverPort"),
+        tlsCertificatePath = options.getString("tlsCertificatePath"),
+        tlsPrivateKeyPath = options.getString("tlsPrivateKeyPath"),
+        tlsPrivateKeyPassword = options.getString("tlsPrivateKeyPassword"),
+        authApplicationName = options.getString("authApplicationName"),
+        correlationId = options.getLong("correlationId")
+      )
+    }
+  }
+
+  object RefDataApiConfig {
+    def apply(options: CaseInsensitiveStringMap): RefDataApiConfig = {
+      RefDataApiConfig(
+        serviceHost = options.getString("serviceHost"),
+        servicePort = options.getInt("servicePort"),
+        correlationId = options.getLong("correlationId")
       )
     }
   }
@@ -522,5 +571,4 @@ object BPipeConfig {
       )
     }
   }
-
 }

@@ -72,7 +72,7 @@ class BPipeConfigTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
       "correlationId" -> "999"
     ).asJava
     val options = new CaseInsensitiveStringMap(optionsMap)
-    ApiConfig(options) should be(ApiConfig(
+    RefDataApiConfig(options) should be(RefDataApiConfig(
       "127.0.0.1",
       85295,
       999
@@ -86,7 +86,7 @@ class BPipeConfigTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     ).asJava
     val options = new CaseInsensitiveStringMap(optionsMap)
     assertThrows[IllegalArgumentException] {
-      ApiConfig(options)
+      RefDataApiConfig(options)
     }
   }
 
@@ -98,7 +98,7 @@ class BPipeConfigTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     ).asJava
     val options = new CaseInsensitiveStringMap(optionsMap)
     val caught = intercept[IllegalArgumentException] {
-      ApiConfig(options)
+      RefDataApiConfig(options)
     }
     caught.getMessage.split("\\s").head should be("[correlationId]")
   }
