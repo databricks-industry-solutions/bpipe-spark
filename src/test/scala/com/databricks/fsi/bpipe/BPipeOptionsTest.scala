@@ -1,15 +1,39 @@
 package com.databricks.fsi.bpipe
 
+import com.databricks.fsi.bpipe.BPipeConfig.{MktDataApiConfig, RefDataApiConfig, StaticMktDataApiConfig}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
+import java.io.{File, FileWriter}
 import java.text.SimpleDateFormat
+import java.nio.file.{Files, Path}
 import scala.collection.JavaConverters._
 
 class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
+
+  private var tempCertFile: Path = _
+  private var tempKeyFile: Path = _
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    // Create temporary certificate files for StaticMktDataApiConfig tests
+    tempCertFile = Files.createTempFile("test-cert", ".p12")
+    tempKeyFile = Files.createTempFile("test-key", ".p12")
+    
+    // Write some dummy content to make the files exist
+    Files.write(tempCertFile, "dummy certificate content".getBytes)
+    Files.write(tempKeyFile, "dummy key content".getBytes)
+  }
+
+  override def afterAll(): Unit = {
+    // Clean up temporary files
+    if (tempCertFile != null) Files.deleteIfExists(tempCertFile)
+    if (tempKeyFile != null) Files.deleteIfExists(tempKeyFile)
+    super.afterAll()
+  }
 
   "Options" should "be parsed" in {
 
@@ -83,6 +107,175 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     assertThrows[IllegalArgumentException] {
       options = new CaseInsensitiveStringMap(Map("list" -> "FOO").asJava)
       options.getIntList("list")
+    }
+  }
+
+  "MktDataApiConfig" should "be created with valid options" in {
+    val options = new CaseInsensitiveStringMap(Map(
+      "serviceHost" -> "localhost",
+      "servicePort" -> "8194",
+      "correlationId" -> "12345"
+    ).asJava)
+
+    val config = MktDataApiConfig(options)
+    
+    config.serviceHost should be("localhost")
+    config.servicePort should be(8194)
+    config.correlationId should be(12345L)
+  }
+
+  it should "fail with missing required options" in {
+    val incompleteOptions = new CaseInsensitiveStringMap(Map(
+      "serviceHost" -> "localhost"
+      // Missing servicePort and correlationId
+    ).asJava)
+
+    assertThrows[Exception] {
+      MktDataApiConfig(incompleteOptions)
+    }
+  }
+
+  "RefDataApiConfig" should "be created with valid options" in {
+    val options = new CaseInsensitiveStringMap(Map(
+      "serviceHost" -> "127.0.0.1",
+      "servicePort" -> "8954",
+      "correlationId" -> "999"
+    ).asJava)
+
+    val config = RefDataApiConfig(options)
+    
+    config.serviceHost should be("127.0.0.1")
+    config.servicePort should be(8954)
+    config.correlationId should be(999L)
+  }
+
+  it should "fail with missing required options" in {
+    val incompleteOptions = new CaseInsensitiveStringMap(Map(
+      "serviceHost" -> "127.0.0.1"
+      // Missing servicePort and correlationId
+    ).asJava)
+
+    assertThrows[Exception] {
+      RefDataApiConfig(incompleteOptions)
+    }
+  }
+
+  "StaticMktDataApiConfig" should "be created with valid options and existing certificate files" in {
+    val options = new CaseInsensitiveStringMap(Map(
+      "serverAddresses" -> "['gbr.cloudpoint.bloomberg.com','deu.cloudpoint.bloomberg.com']",
+      "serverPort" -> "8194",
+      "tlsCertificatePath" -> tempCertFile.toString,
+      "tlsPrivateKeyPath" -> tempKeyFile.toString,
+      "tlsPrivateKeyPassword" -> "testPassword123",
+      "authApplicationName" -> "blp:test-app",
+      "correlationId" -> "777"
+    ).asJava)
+
+    val config = StaticMktDataApiConfig(options)
+    
+    config.serverAddresses should be(Array("gbr.cloudpoint.bloomberg.com", "deu.cloudpoint.bloomberg.com"))
+    config.serverPort should be(8194)
+    config.tlsCertificatePath should be(tempCertFile.toString)
+    config.tlsPrivateKeyPath should be(tempKeyFile.toString)
+    config.tlsPrivateKeyPassword should be("testPassword123")
+    config.authApplicationName should be("blp:test-app")
+    config.correlationId should be(777L)
+  }
+
+  it should "fail when certificate file does not exist" in {
+    val options = new CaseInsensitiveStringMap(Map(
+      "serverAddresses" -> "['gbr.cloudpoint.bloomberg.com']",
+      "serverPort" -> "8194",
+      "tlsCertificatePath" -> "/nonexistent/path/cert.p12",
+      "tlsPrivateKeyPath" -> tempKeyFile.toString,
+      "tlsPrivateKeyPassword" -> "testPassword123",
+      "authApplicationName" -> "blp:test-app",
+      "correlationId" -> "777"
+    ).asJava)
+
+    assertThrows[IllegalArgumentException] {
+      StaticMktDataApiConfig(options)
+    }
+  }
+
+  it should "fail when private key file does not exist" in {
+    val options = new CaseInsensitiveStringMap(Map(
+      "serverAddresses" -> "['gbr.cloudpoint.bloomberg.com']",
+      "serverPort" -> "8194",
+      "tlsCertificatePath" -> tempCertFile.toString,
+      "tlsPrivateKeyPath" -> "/nonexistent/path/key.p12",
+      "tlsPrivateKeyPassword" -> "testPassword123",
+      "authApplicationName" -> "blp:test-app",
+      "correlationId" -> "777"
+    ).asJava)
+
+    assertThrows[IllegalArgumentException] {
+      StaticMktDataApiConfig(options)
+    }
+  }
+
+  it should "fail with missing required TLS options" in {
+    val incompleteOptions = new CaseInsensitiveStringMap(Map(
+      "serverAddresses" -> "['gbr.cloudpoint.bloomberg.com']",
+      "serverPort" -> "8194"
+      // Missing TLS certificate paths and other required fields
+    ).asJava)
+    assertThrows[Exception] {
+      StaticMktDataApiConfig(incompleteOptions)
+    }
+  }
+
+  it should "handle single server address" in {
+    val options = new CaseInsensitiveStringMap(Map(
+      "serverAddresses" -> "['single.server.com']",
+      "serverPort" -> "8194",
+      "tlsCertificatePath" -> tempCertFile.toString,
+      "tlsPrivateKeyPath" -> tempKeyFile.toString,
+      "tlsPrivateKeyPassword" -> "password",
+      "authApplicationName" -> "blp:test",
+      "correlationId" -> "123"
+    ).asJava)
+    val config = StaticMktDataApiConfig(options)
+    config.serverAddresses should be(Array("single.server.com"))
+    config.serverPort should be(8194)
+  }
+
+  it should "handle multiple server addresses" in {
+    val options = new CaseInsensitiveStringMap(Map(
+      "serverAddresses" -> "['server1.com','server2.com','server3.com']",
+      "serverPort" -> "8194",
+      "tlsCertificatePath" -> tempCertFile.toString,
+      "tlsPrivateKeyPath" -> tempKeyFile.toString,
+      "tlsPrivateKeyPassword" -> "password",
+      "authApplicationName" -> "blp:test",
+      "correlationId" -> "456"
+    ).asJava)
+
+    val config = StaticMktDataApiConfig(options)
+    
+    config.serverAddresses should be(Array("server1.com", "server2.com", "server3.com"))
+  }
+
+  it should "validate all required fields are present" in {
+    val validOptions = Map(
+      "serverAddresses" -> "['test.com']",
+      "serverPort" -> "8194",
+      "tlsCertificatePath" -> tempCertFile.toString,
+      "tlsPrivateKeyPath" -> tempKeyFile.toString,
+      "tlsPrivateKeyPassword" -> "password",
+      "authApplicationName" -> "blp:test",
+      "correlationId" -> "123"
+    )
+
+    // Test each required field by removing it
+    validOptions.keys.foreach { keyToRemove =>
+      val incompleteOptions = new CaseInsensitiveStringMap(
+        (validOptions - keyToRemove).asJava
+      )
+      
+      assertThrows[Exception] {
+        StaticMktDataApiConfig(incompleteOptions)
+      }
     }
   }
 
