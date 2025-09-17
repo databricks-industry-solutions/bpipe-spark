@@ -8,7 +8,7 @@ bpipe-reader.iml
 
 # C extensions
 *.so
-
+config.properties
 # Distribution / packaging
 .idea
 .Python
