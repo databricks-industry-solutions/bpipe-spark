@@ -12,24 +12,24 @@ import java.util.Date
 @BPipeEnvironmentTest
 class StaticMktDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
-  var spark: SparkSession = _
   val sdf = new SimpleDateFormat("yyyy-MM-dd")
   val aMonthAgo: String = sdf.format(Date.from(ZonedDateTime.now().minusMonths(1).toInstant))
   val aYearAgo: String = sdf.format(Date.from(ZonedDateTime.now().minusYears(1).toInstant))
   val now: String = sdf.format(Date.from(ZonedDateTime.now().toInstant))
+  var spark: SparkSession = _
 
   override protected def beforeAll(): Unit = {
     // Explicitly configure log4j to use our properties file
     System.setProperty("log4j.configuration", "log4j.properties")
-    
+
     // Force log4j to reconfigure
     import org.apache.log4j.LogManager
     LogManager.resetConfiguration()
     LogManager.getRootLogger()
-    
+
     spark = SparkSession.builder()
       .appName(BLP_STATICMKTDATA)
-      .master("local[2]")  
+      .master("local[2]")
       .getOrCreate()
 
     // Set Spark context log level to ERROR to minimize noise
@@ -46,18 +46,19 @@ class StaticMktDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfter
       .format("//blp/staticMktData")
 
       // B-PIPE connection
-      .option("serverAddresses", "['IP_ADDRESS_1', 'IP_ADDRESS_2']")
+      .option("serverAddresses", "['gbr.cloudpoint.bloomberg.com', 'deu.cloudpoint.bloomberg.com']")
       .option("serverPort", 8194)
-      .option("tlsCertificatePath", "PATH_TO_CERTIFICATE.pk7")
-      .option("tlsPrivateKeyPath", "PATH_TO_PRIVATE_KEY.pk12")
-      .option("tlsPrivateKeyPassword", "PRIVATE_KEY_PASSWORD")
-      .option("authApplicationName", "APP_NAME")
+      .option("tlsCertificatePath", "/Users/antoine.amend/Workspace/bloomberg/bpipe-spark/credentials/rootCertificate.pk7")
+      .option("tlsPrivateKeyPath", "/Users/antoine.amend/Workspace/bloomberg/bpipe-spark/credentials/073BE6888AE987A5FC5C3C288CBC89E3.pk12")
+      .option("tlsPrivateKeyPassword", "VcRC3uY48vp2wZj5")
+      .option("authApplicationName", "blp:dbx-src-test")
       .option("correlationId", 999)
 
       // Service configuration
       .option("serviceName", "ReferenceDataRequest")
       .option("fields", "['BID', 'ASK', 'LAST_PRICE']")
       .option("securities", "['BBHBEAT Index', 'GBP BGN Curncy', 'EUR BGN Curncy', 'JPYEUR BGN Curncy']")
+      .option("returnEids", true)
 
       // Custom logic
       .option("timezone", "America/New_York")

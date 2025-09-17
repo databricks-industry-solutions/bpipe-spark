@@ -44,7 +44,7 @@ object RefDataPlanner {
                            options: CaseInsensitiveStringMap
                          ) extends Batch {
 
-    final val apiConfig = RefDataApiConfig(options)
+    final val apiConfig = BpipeApiConfig(options)
     final val svcConfig: SvcConfig = serviceName match {
       case HISTORICAL_DATA_REQUEST => RefDataHistoricalConfig(options)
       case REFERENCE_DATA_REQUEST => RefDataConfig(options)

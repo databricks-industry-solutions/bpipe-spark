@@ -44,7 +44,7 @@ object StaticMktDataPlanner {
                                  options: CaseInsensitiveStringMap
                                ) extends Batch {
 
-    final val apiConfig = StaticMktDataApiConfig(options)
+    final val apiConfig = BpipeApiConfig(options)
     final val svcConfig: SvcConfig = serviceName match {
       case REFERENCE_DATA_REQUEST => StaticMktDataConfig(options)
       case _ => throw new IllegalArgumentException(s"Unsupported [serviceName] for [$BLP_STATICMKTDATA] service")

@@ -1,6 +1,6 @@
 package com.databricks.fsi.bpipe
 
-import com.databricks.fsi.bpipe.BPipeConfig.{MktDataApiConfig, MktDataConfig}
+import com.databricks.fsi.bpipe.BPipeConfig.{BpipeApiConfig, MktDataConfig}
 import com.databricks.fsi.bpipe.MktDataHandler.MktDataPartitionReaderFactory
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.connector.read.streaming.{MicroBatchStream, Offset}
@@ -43,7 +43,7 @@ object MktDataPlanner {
                                       options: CaseInsensitiveStringMap
                                     ) extends MicroBatchStream {
 
-    final val apiConfig = MktDataApiConfig(options)
+    final val apiConfig = BpipeApiConfig(options)
     final val mktConfig = MktDataConfig(options)
     final val timezone = Try(ZoneId.of(options.getOrDefault("timezone", "UTC"))) match {
       case Success(value) => value

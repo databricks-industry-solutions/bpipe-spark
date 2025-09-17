@@ -1,17 +1,19 @@
 package com.databricks.fsi.bpipe
 
+import com.bloomberglp.blpapi.SessionOptions.ServerAddress
 import com.bloomberglp.blpapi._
-import com.databricks.fsi.bpipe.BPipeConfig.{MktDataApiConfig, MktDataConfig, SvcConfig}
+import com.databricks.fsi.bpipe.BPipeConfig.{BpipeApiConfig, MktDataConfig, SvcConfig}
 import com.databricks.fsi.bpipe.BPipeUtils._
+import org.apache.commons.io.IOUtils
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter
-import org.apache.spark.sql.connector.read.streaming.PartitionOffset
 import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader, PartitionReaderFactory}
 import org.apache.spark.sql.types.{ArrayType, StringType, StructType}
 import org.apache.spark.unsafe.types.UTF8String
 import org.slf4j.LoggerFactory
 
+import java.io.{File, FileInputStream}
 import java.time.ZoneId
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 import scala.collection.JavaConverters._
@@ -19,10 +21,8 @@ import scala.util.{Failure, Success, Try}
 
 object MktDataHandler {
 
-  case class MktDataPartitionPartitionOffset() extends PartitionOffset
-
   case class MktDataPartitionReaderFactory(
-                                            apiConfig: MktDataApiConfig,
+                                            apiConfig: BpipeApiConfig,
                                             schema: StructType,
                                             timezone: ZoneId
                                           ) extends PartitionReaderFactory {
@@ -129,7 +129,7 @@ object MktDataHandler {
 
   case class MktDataPartitionReader(
                                      schema: StructType,
-                                     apiConfig: MktDataApiConfig,
+                                     apiConfig: BpipeApiConfig,
                                      svcConfig: SvcConfig,
                                      timezone: ZoneId
                                    ) extends PartitionReader[InternalRow] {
@@ -146,10 +146,17 @@ object MktDataHandler {
       // Instantiate new session
       LOGGER.info("Starting new B-PIPE session asynchronously")
       val sessionOptions = new SessionOptions
-
-      // MktData uses simple host/port configuration
-      sessionOptions.setServerHost(apiConfig.serviceHost)
-      sessionOptions.setServerPort(apiConfig.servicePort)
+      val serverAddresses = apiConfig.serverAddresses.map { host =>
+        new ServerAddress(host, apiConfig.serverPort)
+      }
+      sessionOptions.setServerAddresses(serverAddresses)
+      sessionOptions.setTlsOptions(TlsOptions.createFromBlobs(
+        IOUtils.toByteArray(new FileInputStream(new File(apiConfig.tlsPrivateKeyPath))),
+        apiConfig.tlsPrivateKeyPassword.toCharArray,
+        IOUtils.toByteArray(new FileInputStream(new File(apiConfig.tlsCertificatePath)))
+      ))
+      val authOptions = new AuthOptions(new AuthApplication(apiConfig.authApplicationName))
+      sessionOptions.setSessionIdentityOptions(authOptions)
 
       // Start session asynchronously
       val eventHandler = MktDataPartitionEventHandler(

@@ -22,7 +22,7 @@ object StaticMktDataHandler {
 
   case class StaticMktDataPartitionReaderFactory(
                                                   serviceName: String,
-                                                  apiConfig: StaticMktDataApiConfig,
+                                                  apiConfig: BpipeApiConfig,
                                                   schema: StructType,
                                                   timezone: ZoneId
                                                 ) extends PartitionReaderFactory {
@@ -35,7 +35,7 @@ object StaticMktDataHandler {
   case class StaticMktDataPartitionReader(
                                            serviceName: String,
                                            schema: StructType,
-                                           apiConfig: StaticMktDataApiConfig,
+                                           apiConfig: BpipeApiConfig,
                                            svcConfig: SvcConfig,
                                            timezone: ZoneId
                                          ) extends PartitionReader[InternalRow] {

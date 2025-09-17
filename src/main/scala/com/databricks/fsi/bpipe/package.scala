@@ -11,6 +11,7 @@ import scala.util.{Failure, Success, Try}
 package object bpipe {
 
   val BLP_REFDATA = "//blp/refdata"
+  val BLP_HISTORICALDATA = "//blp/historicaldata"
   val BLP_STATICMKTDATA = "//blp/staticmktdata"
   val BLP_MKTDATA = "//blp/mktdata"
 
@@ -29,7 +30,6 @@ package object bpipe {
   val BLP_STATICMKTDATA_SERVICES: Set[String] = Set(
     REFERENCE_DATA_REQUEST
   )
-
 
   implicit class CaseInsensitiveStringMapImpl(options: CaseInsensitiveStringMap) {
 
@@ -132,6 +132,17 @@ package object bpipe {
       getComplexType[List[Int]](key)
     }
 
+    def getComplexType[T](key: String)(implicit m: Manifest[T]): T = {
+      require(options.containsKey(key), s"[$key] is not accessible in options")
+      Try {
+        parse(options.get(key).replace("'", "\"")).extract[T]
+      } match {
+        case Success(l) => l
+        case Failure(e) =>
+          throw new IllegalArgumentException(s"[$key] must be specified as JSON object", e)
+      }
+    }
+
     def getStringListOpt(key: String): List[String] = {
       if (options.containsKey(key)) getStringList(key) else List.empty
     }
@@ -146,17 +157,6 @@ package object bpipe {
 
     def getStringMap(key: String): Map[String, String] = {
       getComplexType[Map[String, String]](key)
-    }
-
-    def getComplexType[T](key: String)(implicit m: Manifest[T]): T = {
-      require(options.containsKey(key), s"[$key] is not accessible in options")
-      Try {
-        parse(options.get(key).replace("'", "\"")).extract[T]
-      } match {
-        case Success(l) => l
-        case Failure(e) =>
-          throw new IllegalArgumentException(s"[$key] must be specified as JSON object", e)
-      }
     }
 
   }

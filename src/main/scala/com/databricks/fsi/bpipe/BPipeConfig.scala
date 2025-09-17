@@ -1,6 +1,7 @@
 package com.databricks.fsi.bpipe
 
 import com.bloomberglp.blpapi.{Datetime, Element, Name, Request}
+import com.google.gson.Gson
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.connector.read.InputPartition
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -22,7 +23,11 @@ object BPipeConfig {
     "AT_TRADE",
     "SETTLE",
     "BEST_BID",
-    "BEST_ASK"
+    "BEST_ASK",
+    "MKTDATA_EVENT_TYPE",
+    "MKTDATA_EVENT_SUBTYPE",
+    "EID",
+    "IS_DELAYED_STREAM"
   )
   private val validPeriodicityAdjustment = Set(
     "ACTUAL",
@@ -148,53 +153,19 @@ object BPipeConfig {
 
   }
 
-  case class MktDataApiConfig(
-                               serviceHost: String,
-                               servicePort: Int,
-                               correlationId: Long
-                             ) extends Serializable
+  case class BpipeApiConfig(
+                             serverAddresses: Array[String],
+                             serverPort: Int,
+                             tlsCertificatePath: String,
+                             tlsPrivateKeyPath: String,
+                             tlsPrivateKeyPassword: String,
+                             authApplicationName: String,
+                             correlationId: Long
+                           ) extends Serializable {
 
-  case class StaticMktDataApiConfig(
-                                     serverAddresses: Array[String],
-                                     serverPort: Int,
-                                     tlsCertificatePath: String,
-                                     tlsPrivateKeyPath: String,
-                                     tlsPrivateKeyPassword: String,
-                                     authApplicationName: String,
-                                     correlationId: Long
-                                   ) extends Serializable
-
-  case class RefDataApiConfig(
-                               serviceHost: String,
-                               servicePort: Int,
-                               correlationId: Long
-                             ) extends Serializable
-
-  case class MktDataConfig(
-                            securities: List[String] = List.empty,
-                            fields: List[String] = List.empty
-                          ) extends SvcConfig {
-
-    override def buildRequest(request: Request): Unit = {
-      throw new IllegalAccessError("Unsupported")
+    override def toString: String = {
+      new Gson().toJson(this)
     }
-
-    override def validate(): MktDataConfig = {
-      // Those are mandatory fields for market data request
-      require(securities.nonEmpty, "[securities] needs to be specified")
-      require(fields.nonEmpty, "[fields] needs to be specified")
-      this
-    }
-
-    override def buildPartitions(options: CaseInsensitiveStringMap): Array[InputPartition] = {
-      LOGGER.info("Partitioning Market subscriptions")
-      // Market data can be partitioned by securities, where each partition (a spark task) responsible for
-      // only a subset of securities to fetch
-      partitionBySecurities(options, securities).map(securities => {
-        this.copy(securities = securities)
-      })
-    }
-
   }
 
   /**
@@ -284,11 +255,42 @@ object BPipeConfig {
 
   }
 
-  case class StaticMktDataConfig(
+  case class MktDataConfig(
                             securities: List[String] = List.empty,
                             fields: List[String] = List.empty,
                             returnEids: Option[Boolean] = None,
                           ) extends SvcConfig {
+
+    override def buildRequest(request: Request): Unit = {
+      request.appendFields(fields)
+      request.appendSecurities(securities)
+      if (returnEids.isDefined) request.set(Name.getName("returnEids"), returnEids.get)
+    }
+
+    override def validate(): MktDataConfig = {
+      // Those are mandatory fields for market data request
+      require(securities.nonEmpty, "[securities] needs to be specified")
+      require(fields.nonEmpty, "[fields] needs to be specified")
+      this
+    }
+
+    override def buildPartitions(options: CaseInsensitiveStringMap): Array[InputPartition] = {
+      LOGGER.info("Partitioning Market subscriptions")
+      // Market data can be partitioned by securities, where each partition (a spark task) responsible for
+      // only a subset of securities to fetch
+      partitionBySecurities(options, securities).map(securities => {
+        this.copy(securities = securities)
+      })
+    }
+
+  }
+
+
+  case class StaticMktDataConfig(
+                                  securities: List[String] = List.empty,
+                                  fields: List[String] = List.empty,
+                                  returnEids: Option[Boolean] = None,
+                                ) extends SvcConfig {
 
     override def buildRequest(request: Request): Unit = {
       request.appendFields(fields)
@@ -303,7 +305,7 @@ object BPipeConfig {
     }
 
     override def buildPartitions(options: CaseInsensitiveStringMap): Array[InputPartition] = {
-      LOGGER.info("Partitioning Reference data requests")
+      LOGGER.info("Partitioning Static Market data requests")
       partitionBySecurities(options, securities).map(securities => {
         this.copy(securities = securities)
       })
@@ -484,25 +486,15 @@ object BPipeConfig {
 
   }
 
-  object MktDataApiConfig {
-    def apply(options: CaseInsensitiveStringMap): MktDataApiConfig = {
-      MktDataApiConfig(
-        serviceHost = options.getString("serviceHost"),
-        servicePort = options.getInt("servicePort"),
-        correlationId = options.getLong("correlationId")
-      )
-    }
-  }
-
-  object StaticMktDataApiConfig {
-    def apply(options: CaseInsensitiveStringMap): StaticMktDataApiConfig = {
+  object BpipeApiConfig {
+    def apply(options: CaseInsensitiveStringMap): BpipeApiConfig = {
 
       require(new java.io.File(options.getString("tlsCertificatePath")).exists(),
         s"TLS certificate file does not exist")
       require(new java.io.File(options.getString("tlsPrivateKeyPath")).exists(),
         s"TLS private key file does not exist")
 
-      StaticMktDataApiConfig(
+      BpipeApiConfig(
         serverAddresses = options.getStringList("serverAddresses").toArray,
         serverPort = options.getInt("serverPort"),
         tlsCertificatePath = options.getString("tlsCertificatePath"),
@@ -514,21 +506,12 @@ object BPipeConfig {
     }
   }
 
-  object RefDataApiConfig {
-    def apply(options: CaseInsensitiveStringMap): RefDataApiConfig = {
-      RefDataApiConfig(
-        serviceHost = options.getString("serviceHost"),
-        servicePort = options.getInt("servicePort"),
-        correlationId = options.getLong("correlationId")
-      )
-    }
-  }
-
   object MktDataConfig {
     def apply(options: CaseInsensitiveStringMap): MktDataConfig = {
       MktDataConfig(
         options.getStringList("securities"),
-        options.getStringList("fields")
+        options.getStringList("fields"),
+        options.getBooleanOpt("returnEids")
       )
     }
   }

@@ -1,6 +1,6 @@
 package com.databricks.fsi.bpipe
 
-import com.databricks.fsi.bpipe.BPipeConfig.{MktDataApiConfig, RefDataApiConfig, StaticMktDataApiConfig}
+import com.databricks.fsi.bpipe.BPipeConfig.BpipeApiConfig
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
@@ -109,59 +109,9 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     }
   }
 
-  "MktDataApiConfig" should "be created with valid options" in {
+  "MktDataApiConfig" should "be created with valid options and existing certificate files" in {
     val options = new CaseInsensitiveStringMap(Map(
-      "serviceHost" -> "localhost",
-      "servicePort" -> "8194",
-      "correlationId" -> "12345"
-    ).asJava)
-
-    val config = MktDataApiConfig(options)
-
-    config.serviceHost should be("localhost")
-    config.servicePort should be(8194)
-    config.correlationId should be(12345L)
-  }
-
-  it should "fail with missing required options" in {
-    val incompleteOptions = new CaseInsensitiveStringMap(Map(
-      "serviceHost" -> "localhost"
-      // Missing servicePort and correlationId
-    ).asJava)
-
-    assertThrows[Exception] {
-      MktDataApiConfig(incompleteOptions)
-    }
-  }
-
-  "RefDataApiConfig" should "be created with valid options" in {
-    val options = new CaseInsensitiveStringMap(Map(
-      "serviceHost" -> "127.0.0.1",
-      "servicePort" -> "8954",
-      "correlationId" -> "999"
-    ).asJava)
-
-    val config = RefDataApiConfig(options)
-
-    config.serviceHost should be("127.0.0.1")
-    config.servicePort should be(8954)
-    config.correlationId should be(999L)
-  }
-
-  it should "fail with missing required options" in {
-    val incompleteOptions = new CaseInsensitiveStringMap(Map(
-      "serviceHost" -> "127.0.0.1"
-      // Missing servicePort and correlationId
-    ).asJava)
-
-    assertThrows[Exception] {
-      RefDataApiConfig(incompleteOptions)
-    }
-  }
-
-  "StaticMktDataApiConfig" should "be created with valid options and existing certificate files" in {
-    val options = new CaseInsensitiveStringMap(Map(
-      "serverAddresses" -> "['gbr.cloudpoint.bloomberg.com','deu.cloudpoint.bloomberg.com']",
+      "serverAddresses" -> "['127.0.0.1','127.0.0.2']",
       "serverPort" -> "8194",
       "tlsCertificatePath" -> tempCertFile.toString,
       "tlsPrivateKeyPath" -> tempKeyFile.toString,
@@ -170,9 +120,9 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
       "correlationId" -> "777"
     ).asJava)
 
-    val config = StaticMktDataApiConfig(options)
+    val config = BpipeApiConfig(options)
 
-    config.serverAddresses should be(Array("gbr.cloudpoint.bloomberg.com", "deu.cloudpoint.bloomberg.com"))
+    config.serverAddresses should be(Array("127.0.0.1", "127.0.0.2"))
     config.serverPort should be(8194)
     config.tlsCertificatePath should be(tempCertFile.toString)
     config.tlsPrivateKeyPath should be(tempKeyFile.toString)
@@ -183,7 +133,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
 
   it should "fail when certificate file does not exist" in {
     val options = new CaseInsensitiveStringMap(Map(
-      "serverAddresses" -> "['gbr.cloudpoint.bloomberg.com']",
+      "serverAddresses" -> "['127.0.0.1']",
       "serverPort" -> "8194",
       "tlsCertificatePath" -> "/nonexistent/path/cert.p12",
       "tlsPrivateKeyPath" -> tempKeyFile.toString,
@@ -193,7 +143,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     ).asJava)
 
     assertThrows[IllegalArgumentException] {
-      StaticMktDataApiConfig(options)
+      BpipeApiConfig(options)
     }
   }
 
@@ -209,7 +159,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
     ).asJava)
 
     assertThrows[IllegalArgumentException] {
-      StaticMktDataApiConfig(options)
+      BpipeApiConfig(options)
     }
   }
 
@@ -220,7 +170,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
       // Missing TLS certificate paths and other required fields
     ).asJava)
     assertThrows[Exception] {
-      StaticMktDataApiConfig(incompleteOptions)
+      BpipeApiConfig(incompleteOptions)
     }
   }
 
@@ -234,7 +184,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
       "authApplicationName" -> "blp:test",
       "correlationId" -> "123"
     ).asJava)
-    val config = StaticMktDataApiConfig(options)
+    val config = BpipeApiConfig(options)
     config.serverAddresses should be(Array("single.server.com"))
     config.serverPort should be(8194)
   }
@@ -250,7 +200,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
       "correlationId" -> "456"
     ).asJava)
 
-    val config = StaticMktDataApiConfig(options)
+    val config = BpipeApiConfig(options)
 
     config.serverAddresses should be(Array("server1.com", "server2.com", "server3.com"))
   }
@@ -273,7 +223,7 @@ class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll 
       )
 
       assertThrows[Exception] {
-        StaticMktDataApiConfig(incompleteOptions)
+        BpipeApiConfig(incompleteOptions)
       }
     }
   }
