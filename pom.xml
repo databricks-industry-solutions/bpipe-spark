@@ -306,9 +306,9 @@
     <profiles>
 
         <!-- Some tests require live B-Pipe environment tunnelled on localhost -->
-        <!-- We only enable those integration tests through profile -PBpipe -->
+        <!-- We only enable those integration tests through profile -Pbpipe -->
         <profile>
-            <id>Bpipe</id>
+            <id>bpipe</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>

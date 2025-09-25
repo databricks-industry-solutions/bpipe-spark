@@ -1,8 +1,10 @@
 package com.databricks.fsi.bpipe
 
+import com.bloomberglp.blpapi.SessionOptions.ServerAddress
 import com.bloomberglp.blpapi._
 import com.databricks.fsi.bpipe.BPipeConfig._
 import com.databricks.fsi.bpipe.BPipeUtils._
+import org.apache.commons.io.IOUtils
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter
@@ -11,6 +13,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 import org.slf4j.LoggerFactory
 
+import java.io.{File, FileInputStream}
 import java.time.ZoneId
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
@@ -19,7 +22,7 @@ object RefDataHandler {
 
   case class RefDataPartitionReaderFactory(
                                             serviceName: String,
-                                            apiConfig: ApiConfig,
+                                            apiConfig: BpipeApiConfig,
                                             schema: StructType,
                                             timezone: ZoneId
                                           ) extends PartitionReaderFactory {
@@ -32,7 +35,7 @@ object RefDataHandler {
   case class RefDataPartitionReader(
                                      serviceName: String,
                                      schema: StructType,
-                                     apiConfig: ApiConfig,
+                                     apiConfig: BpipeApiConfig,
                                      svcConfig: SvcConfig,
                                      timezone: ZoneId
                                    ) extends PartitionReader[InternalRow] {
@@ -47,9 +50,17 @@ object RefDataHandler {
       // Instantiate new session
       LOGGER.info("Starting new B-PIPE session")
       val sessionOptions = new SessionOptions
-      sessionOptions.setServerHost(apiConfig.serviceHost)
-      sessionOptions.setServerPort(apiConfig.servicePort)
-      // TODO: Pass application ID. Not supported in BEMU emulator
+      val serverAddresses = apiConfig.serverAddresses.map { host =>
+        new ServerAddress(host, apiConfig.serverPort)
+      }
+      sessionOptions.setServerAddresses(serverAddresses)
+      sessionOptions.setTlsOptions(TlsOptions.createFromBlobs(
+        IOUtils.toByteArray(new FileInputStream(new File(apiConfig.tlsPrivateKeyPath))),
+        apiConfig.tlsPrivateKeyPassword.toCharArray,
+        IOUtils.toByteArray(new FileInputStream(new File(apiConfig.tlsCertificatePath)))
+      ))
+      val authOptions = new AuthOptions(new AuthApplication(apiConfig.authApplicationName))
+      sessionOptions.setSessionIdentityOptions(authOptions)
       session = new Session(sessionOptions)
       session.start
 
@@ -78,30 +89,30 @@ object RefDataHandler {
     }
 
     def hasResponseError(message: Message): Boolean = {
-      if (message.hasElement("responseError", true)) {
-        val secError = message.getElement("responseError")
-        val errorMessage = secError.getElementAsString("message")
+      if (message.hasElement(Name.getName("responseError"), true)) {
+        val secError = message.getElement(Name.getName("responseError"))
+        val errorMessage = secError.getElementAsString(Name.getName("message"))
         LOGGER.error(s"[B-PIPE response error]: $errorMessage")
         true
       } else false
     }
 
     def hasDataError(securityData: Element): Boolean = {
-      if (securityData.hasElement("securityError", true)) {
-        val securityError = securityData.getElement("securityError")
-        val message = securityError.getElementAsString("message")
+      if (securityData.hasElement(Name.getName("securityError"), true)) {
+        val securityError = securityData.getElement(Name.getName("securityError"))
+        val message = securityError.getElementAsString(Name.getName("message"))
         LOGGER.error(s"[B-PIPE data error]: $message")
         true
       } else false
     }
 
     def hasFieldError(securityData: Element): Boolean = {
-      if (securityData.hasElement("fieldExceptions", true)) {
-        val fieldExceptions = securityData.getElement("fieldExceptions")
+      if (securityData.hasElement(Name.getName("fieldExceptions"), true)) {
+        val fieldExceptions = securityData.getElement(Name.getName("fieldExceptions"))
         val messages = (0 until fieldExceptions.numValues()).map(i => {
           val fieldError = fieldExceptions.getValueAsElement(i)
-          val errorInfo = fieldError.getElement("errorInfo")
-          errorInfo.getElementAsString("message")
+          val errorInfo = fieldError.getElement(Name.getName("errorInfo"))
+          errorInfo.getElementAsString(Name.getName("message"))
         }).mkString("\n")
         LOGGER.error(s"[B-PIPE fields error]: $messages")
         true
@@ -113,8 +124,8 @@ object RefDataHandler {
       iterator = event.messageIterator.asScala.flatMap(message => {
         if (hasResponseError(message)) None else {
 
-          val tickData = message.getElement("tickData")
-          val tickDataArray = tickData.getElement("tickData")
+          val tickData = message.getElement(Name.getName("tickData"))
+          val tickDataArray = tickData.getElement(Name.getName("tickData"))
 
           (0 until tickDataArray.numValues).map(i => {
             val tickDataItem = tickDataArray.getValueAsElement(i)
@@ -122,10 +133,10 @@ object RefDataHandler {
             writer.resetRowWriter()
 
             val fieldValues = Map(
-              BPipeFields.Response.TIME -> tickDataItem.getElement("time"),
-              BPipeFields.Response.TYPE -> tickDataItem.getElement("type"),
-              BPipeFields.Response.VALUE -> tickDataItem.getElement("value"),
-              BPipeFields.Response.SIZE -> tickDataItem.getElement("size")
+              BPipeFields.Response.TIME -> tickDataItem.getElement(Name.getName("time")),
+              BPipeFields.Response.TYPE -> tickDataItem.getElement(Name.getName("type")),
+              BPipeFields.Response.VALUE -> tickDataItem.getElement(Name.getName("value")),
+              BPipeFields.Response.SIZE -> tickDataItem.getElement(Name.getName("size"))
             )
 
             schema.fields.zipWithIndex.foreach({ case (requiredField, requiredIndex) =>
@@ -149,13 +160,13 @@ object RefDataHandler {
 
     def processRefDataResponse(event: Event): Unit = {
       iterator = event.messageIterator.asScala.flatMap(message => {
-        val securityDataArray = message.getElement("securityData")
+        val securityDataArray = message.getElement(Name.getName("securityData"))
         (0 until securityDataArray.numValues).flatMap(i => {
           val securityData = securityDataArray.getValueAsElement(i)
           if (hasDataError(securityData) || hasFieldError(securityData)) None else {
 
-            val security = securityData.getElementAsString("security")
-            val fieldDataArray = securityData.getElement("fieldData")
+            val security = securityData.getElementAsString(Name.getName("security"))
+            val fieldDataArray = securityData.getElement(Name.getName("fieldData"))
             val writer = new UnsafeRowWriter(schema.length)
             writer.resetRowWriter()
 
@@ -186,16 +197,16 @@ object RefDataHandler {
 
     def processHistoricalDataResponse(event: Event): Unit = {
       iterator = event.messageIterator.asScala.flatMap(message => {
-        val securityData = message.getElement("securityData")
+        val securityData = message.getElement(Name.getName("securityData"))
         if (hasDataError(securityData) || hasFieldError(securityData)) None else {
 
-          val security = securityData.getElementAsString("security")
-          val fieldDataArray = securityData.getElement("fieldData")
+          val security = securityData.getElementAsString(Name.getName("security"))
+          val fieldDataArray = securityData.getElement(Name.getName("fieldData"))
 
           (0 until fieldDataArray.numValues()).map(i => {
 
             val fieldValues = fieldDataArray.getValueAsElement(i)
-            val date = fieldValues.getElementAsDate("date")
+            val date = fieldValues.getElementAsDate(Name.getName("date"))
             val writer = new UnsafeRowWriter(schema.length)
             writer.resetRowWriter()
 
@@ -205,15 +216,15 @@ object RefDataHandler {
                 case BPipeFields.Response.TIME => date.write(writer, offset, timezone)
                 case _ =>
                   // TODO: Emulator does not map getElement, we do not know what type it is.
-                  if (fieldValues.hasElement(requiredField.name)) {
+                  if (fieldValues.hasElement(Name.getName(requiredField.name))) {
                     requiredField.dataType match {
-                      case FloatType => writer.write(offset, fieldValues.getElementAsFloat32(requiredField.name))
-                      case DoubleType => writer.write(offset, fieldValues.getElementAsFloat64(requiredField.name))
-                      case IntegerType => writer.write(offset, fieldValues.getElementAsInt32(requiredField.name))
-                      case LongType => writer.write(offset, fieldValues.getElementAsInt64(requiredField.name))
-                      case StringType => writer.write(offset, UTF8String.fromString(fieldValues.getElementAsString(requiredField.name)))
-                      case DateType => fieldValues.getElementAsDate(requiredField.name).write(writer, offset, timezone)
-                      case TimestampType => fieldValues.getElementAsDatetime(requiredField.name).write(writer, offset, timezone)
+                      case FloatType => writer.write(offset, fieldValues.getElementAsFloat32(Name.getName(requiredField.name)))
+                      case DoubleType => writer.write(offset, fieldValues.getElementAsFloat64(Name.getName(requiredField.name)))
+                      case IntegerType => writer.write(offset, fieldValues.getElementAsInt32(Name.getName(requiredField.name)))
+                      case LongType => writer.write(offset, fieldValues.getElementAsInt64(Name.getName(requiredField.name)))
+                      case StringType => writer.write(offset, UTF8String.fromString(fieldValues.getElementAsString(Name.getName(requiredField.name))))
+                      case DateType => fieldValues.getElementAsDate(Name.getName(requiredField.name)).write(writer, offset, timezone)
+                      case TimestampType => fieldValues.getElementAsDatetime(Name.getName(requiredField.name)).write(writer, offset, timezone)
                       case ArrayType(StringType, true) =>
                         val elements = fieldValues.numValues()
                         if (elements == 0) {
@@ -246,8 +257,8 @@ object RefDataHandler {
       iterator = event.messageIterator.asScala.flatMap(message => {
         if (hasResponseError(message)) None else {
 
-          val tickData = message.getElement("barData")
-          val tickDataArray = tickData.getElement("barTickData")
+          val tickData = message.getElement(Name.getName("barData"))
+          val tickDataArray = tickData.getElement(Name.getName("barTickData"))
 
           (0 until tickDataArray.numValues).map(i => {
 
@@ -257,14 +268,14 @@ object RefDataHandler {
             writer.resetRowWriter()
 
             val fieldDataElements = Map(
-              BPipeFields.Response.TIME -> tickDataItem.getElement("time"),
-              BPipeFields.Response.OPEN -> tickDataItem.getElement("open"),
-              BPipeFields.Response.HIGH -> tickDataItem.getElement("high"),
-              BPipeFields.Response.LOW -> tickDataItem.getElement("low"),
-              BPipeFields.Response.CLOSE -> tickDataItem.getElement("close"),
-              BPipeFields.Response.NUM_EVENTS -> tickDataItem.getElement("numEvents"),
-              BPipeFields.Response.VOLUME -> tickDataItem.getElement("volume"),
-              BPipeFields.Response.VALUE -> tickDataItem.getElement("value")
+              BPipeFields.Response.TIME -> tickDataItem.getElement(Name.getName("time")),
+              BPipeFields.Response.OPEN -> tickDataItem.getElement(Name.getName("open")),
+              BPipeFields.Response.HIGH -> tickDataItem.getElement(Name.getName("high")),
+              BPipeFields.Response.LOW -> tickDataItem.getElement(Name.getName("low")),
+              BPipeFields.Response.CLOSE -> tickDataItem.getElement(Name.getName("close")),
+              BPipeFields.Response.NUM_EVENTS -> tickDataItem.getElement(Name.getName("numEvents")),
+              BPipeFields.Response.VOLUME -> tickDataItem.getElement(Name.getName("volume")),
+              BPipeFields.Response.VALUE -> tickDataItem.getElement(Name.getName("value"))
             )
 
             schema.fields.zipWithIndex.foreach({ case (requiredField, requiredIndex) =>

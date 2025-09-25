@@ -5,15 +5,23 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
 
-@BPipeEnvironmentTest
-class MktDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
+import java.text.SimpleDateFormat
+import java.time.ZonedDateTime
+import java.util.Date
 
+@BPipeEnvironmentTest
+class StaticMktDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
+
+  val sdf = new SimpleDateFormat("yyyy-MM-dd")
+  val aMonthAgo: String = sdf.format(Date.from(ZonedDateTime.now().minusMonths(1).toInstant))
+  val aYearAgo: String = sdf.format(Date.from(ZonedDateTime.now().minusYears(1).toInstant))
+  val now: String = sdf.format(Date.from(ZonedDateTime.now().toInstant))
   var spark: SparkSession = _
 
   override protected def beforeAll(): Unit = {
     spark = SparkSession.builder()
-      .appName(BLP_MKTDATA)
-      .master("local[1]")
+      .appName(BLP_STATICMKTDATA)
+      .master("local[2]")
       .getOrCreate()
   }
 
@@ -21,11 +29,10 @@ class MktDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     spark.close()
   }
 
-  "Real time feed" should "fully processed" in {
-
+  "ReferenceDataRequest" should "fully processed" in {
     spark
-      .readStream
-      .format("//blp/mktdata")
+      .read
+      .format("//blp/staticMktData")
 
       // B-PIPE connection
       .option("serverAddresses", "['gbr.cloudpoint.bloomberg.com', 'deu.cloudpoint.bloomberg.com']")
@@ -37,19 +44,17 @@ class MktDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
       .option("correlationId", 999)
 
       // Service configuration
-      .option("fields", "['MKTDATA_EVENT_TYPE','MKTDATA_EVENT_SUBTYPE','EID','BID','ASK','IS_DELAYED_STREAM','LAST_UPDATE_ASK_RT','LAST_UPDATE_BID_RT','TRADE_UPDATE_STAMP_RT']")
-      .option("securities", "['0UU5C 95.3750 COMB Comdty']")
+      .option("serviceName", "ReferenceDataRequest")
+      .option("fields", "['BID', 'ASK', 'LAST_PRICE']")
+      .option("securities", "['BBHBEAT Index', 'GBP BGN Curncy', 'EUR BGN Curncy', 'JPYEUR BGN Curncy']")
+      .option("returnEids", true)
+
       // Custom logic
       .option("timezone", "America/New_York")
-      .option("permissive", value = false)
 
-      // Start stream ingest
+      // Start batch ingest
       .load
-      .writeStream
-      .format("console")
-      .outputMode("append")
-      .start()
-      .awaitTermination(20000)
+      .show(20, truncate = false)
   }
 
 }

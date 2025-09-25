@@ -1,2 +1,3 @@
 com.databricks.fsi.bpipe.MktDataSource
 com.databricks.fsi.bpipe.RefDataSource
+com.databricks.fsi.bpipe.StaticMktDataSource

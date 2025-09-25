@@ -4,10 +4,11 @@ __pycache__/
 *$py.class
 .DS_Store
 *.jar
+bpipe-reader.iml
 
 # C extensions
 *.so
-
+config.properties
 # Distribution / packaging
 .idea
 .Python
@@ -130,3 +131,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Bloomberg certificates
+credentials

@@ -8,12 +8,34 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
+import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util
 import java.util.{Date, UUID}
 import scala.collection.JavaConverters._
 
 class BPipeConfigTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
+
+  private var tempCertFile: Path = _
+  private var tempKeyFile: Path = _
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    // Create temporary certificate files for StaticMktDataApiConfig tests
+    tempCertFile = Files.createTempFile("test-cert", ".p12")
+    tempKeyFile = Files.createTempFile("test-key", ".p12")
+
+    // Write some dummy content to make the files exist
+    Files.write(tempCertFile, "dummy certificate content".getBytes)
+    Files.write(tempKeyFile, "dummy key content".getBytes)
+  }
+
+  override def afterAll(): Unit = {
+    // Clean up temporary files
+    if (tempCertFile != null) Files.deleteIfExists(tempCertFile)
+    if (tempKeyFile != null) Files.deleteIfExists(tempKeyFile)
+    super.afterAll()
+  }
 
   "dates" should "use only one partition" in {
     val toDate = new Date()
@@ -65,40 +87,30 @@ class BPipeConfigTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     partitions.exists(_.size != 3) should not be true
   }
 
-  "ApiConfig" should "be constructed from options" in {
-    val optionsMap = Map(
-      "serviceHost" -> "127.0.0.1",
-      "servicePort" -> "85295",
-      "correlationId" -> "999"
-    ).asJava
-    val options = new CaseInsensitiveStringMap(optionsMap)
-    ApiConfig(options) should be(ApiConfig(
-      "127.0.0.1",
-      85295,
-      999
-    ))
-  }
-
-  it should "fail if option is missing" in {
+  "ApiConfig" should "fail if option is missing" in {
     val optionsMap = Map(
       "servicePort" -> "85295",
       "correlationId" -> "999"
     ).asJava
     val options = new CaseInsensitiveStringMap(optionsMap)
     assertThrows[IllegalArgumentException] {
-      ApiConfig(options)
+      BpipeApiConfig(options)
     }
   }
 
   it should "fail if option is invalid" in {
     val optionsMap = Map(
-      "serviceHost" -> "127.0.0.1",
-      "servicePort" -> "85295",
+      "serverAddresses" -> "['127.0.0.1', '127.0.0.2']",
+      "serverPort" -> "8080",
+      "tlsCertificatePath" -> tempCertFile.toString,
+      "tlsPrivateKeyPath" -> tempKeyFile.toString,
+      "tlsPrivateKeyPassword" -> "tlsPrivateKeyPassword",
+      "authApplicationName" -> "authApplicationName",
       "correlationId" -> "INVALID_LONG"
     ).asJava
     val options = new CaseInsensitiveStringMap(optionsMap)
     val caught = intercept[IllegalArgumentException] {
-      ApiConfig(options)
+      BpipeApiConfig(options)
     }
     caught.getMessage.split("\\s").head should be("[correlationId]")
   }

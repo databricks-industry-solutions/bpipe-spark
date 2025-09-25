@@ -11,7 +11,9 @@ import scala.util.{Failure, Success, Try}
 package object bpipe {
 
   val BLP_REFDATA = "//blp/refdata"
-  val BLP_MKDATA = "//blp/mktdata"
+  val BLP_HISTORICALDATA = "//blp/historicaldata"
+  val BLP_STATICMKTDATA = "//blp/staticmktdata"
+  val BLP_MKTDATA = "//blp/mktdata"
 
   val REFERENCE_DATA_REQUEST = "ReferenceDataRequest"
   val HISTORICAL_DATA_REQUEST = "HistoricalDataRequest"
@@ -25,6 +27,9 @@ package object bpipe {
     INTRADAY_TICK_REQUEST
   )
 
+  val BLP_STATICMKTDATA_SERVICES: Set[String] = Set(
+    REFERENCE_DATA_REQUEST
+  )
 
   implicit class CaseInsensitiveStringMapImpl(options: CaseInsensitiveStringMap) {
 

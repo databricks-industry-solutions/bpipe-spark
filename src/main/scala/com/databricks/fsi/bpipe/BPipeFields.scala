@@ -8,11 +8,20 @@ object BPipeFields {
   object Request {
     val fields: Map[String, DataType] = Map(
       "PX_LAST" -> DoubleType,
+      "LAST_PRICE" -> DoubleType,
       "BID" -> DoubleType,
       "ASK" -> DoubleType,
       "TICKER" -> StringType,
       "CHAIN_TICKERS" -> ArrayType(StringType),
-      "TRADE_UPDATE_STAMP_RT" -> TimestampType
+      "TRADE_UPDATE_STAMP_RT" -> TimestampType,
+      "LAST_UPDATE_BID_RT" -> TimestampType,
+      "LAST_UPDATE_ASK_RT" -> TimestampType,
+      "TIME" -> TimestampType,
+      "MKTDATA_EVENT_TYPE" -> StringType,
+      "MKTDATA_EVENT_SUBTYPE" -> StringType,
+      "IS_DELAYED_STREAM" -> BooleanType,
+      "EID" -> LongType,
+      "VOLUME" -> LongType
     )
   }
 

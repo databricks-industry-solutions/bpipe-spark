@@ -1,6 +1,7 @@
 package com.databricks.fsi.bpipe
 
-import com.bloomberglp.blpapi.{Datetime, Element, Request}
+import com.bloomberglp.blpapi.{Datetime, Element, Name, Request}
+import com.google.gson.Gson
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.connector.read.InputPartition
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -50,7 +51,8 @@ object BPipeConfig {
   /**
    * Use might define partitioning strategy to leverage distributed nature of Spark Streaming. With multiple nodes
    * could come multiple requests where each request only processes specific securities
-   * @param options arguments of a spark reader, in form of case insensitive options
+   *
+   * @param options    arguments of a spark reader, in form of case insensitive options
    * @param securities list of securities to be processed
    * @return the list of securities that will be processed in each partition
    */
@@ -109,9 +111,10 @@ object BPipeConfig {
   /**
    * Use might define partitioning strategy to leverage distributed nature of Spark Streaming. With multiple nodes
    * could come multiple requests where each request only processes a specific time window
-   * @param options arguments of a spark reader, in form of case insensitive options
+   *
+   * @param options   arguments of a spark reader, in form of case insensitive options
    * @param startDate the start time for the given historical data request
-   * @param endDate the end time for the given historical data request
+   * @param endDate   the end time for the given historical data request
    * @return the windowed start / end times that will be processed within each partition
    */
   private[bpipe] def partitionByDate(
@@ -146,19 +149,118 @@ object BPipeConfig {
 
   }
 
-  case class ApiConfig(
-                        serviceHost: String,
-                        servicePort: Int,
-                        correlationId: Long
-                      ) extends Serializable
+  case class BpipeApiConfig(
+                             serverAddresses: Array[String],
+                             serverPort: Int,
+                             tlsCertificatePath: String,
+                             tlsPrivateKeyPath: String,
+                             tlsPrivateKeyPassword: String,
+                             authApplicationName: String,
+                             correlationId: Long
+                           ) extends Serializable {
 
-  case class MktDataConfig(
+    override def toString: String = {
+      new Gson().toJson(this)
+    }
+  }
+
+  /**
+   * Helper class to ensure BPipe request is built consistantly across multiple entry points
+   *
+   * @param request original request modified with input options like securities, fields, start or end date
+   */
+  implicit class RequestImpl(request: Request) {
+
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+
+    def appendFields(fields: List[String]): Unit = {
+      fields.foreach(f => request.append(Name.getName("fields"), f))
+    }
+
+    def appendSecurities(securities: List[String]): Unit = {
+      securities.foreach(s => request.append(Name.getName("securities"), s))
+    }
+
+    def appendEventTypes(eventTypes: List[String]): Unit = {
+      eventTypes.foreach(e => request.append(Name.getName("eventTypes"), e))
+    }
+
+    def setSecurity(security: String): Unit = {
+      request.set(Name.getName("security"), security)
+    }
+
+    def setStartDateTime(startDateTime: Date): Unit = {
+      val startCalendar = Calendar.getInstance
+      startCalendar.setTime(startDateTime)
+      request.set(Name.getName("startDateTime"), new Datetime(startCalendar))
+    }
+
+    def setEndDateTime(endDateTime: Date): Unit = {
+      val endCalendar = Calendar.getInstance
+      endCalendar.setTime(endDateTime)
+      request.set(Name.getName("endDateTime"), new Datetime(endCalendar))
+    }
+
+    def setStartDate(startDate: Date): Unit = {
+      request.set(Name.getName("startDate"), sdf.format(startDate))
+    }
+
+    def setEndDate(endDate: Date): Unit = {
+      request.set(Name.getName("endDate"), sdf.format(endDate))
+    }
+
+    def setInterval(interval: Int): Unit = {
+      request.set(Name.getName("interval"), interval)
+    }
+
+  }
+
+  case class RefDataConfig(
                             securities: List[String] = List.empty,
-                            fields: List[String] = List.empty
+                            fields: List[String] = List.empty,
+                            overrides: Map[String, String] = Map.empty
                           ) extends SvcConfig {
 
     override def buildRequest(request: Request): Unit = {
-      throw new IllegalAccessError("Unsupported")
+
+      request.appendFields(fields)
+      request.appendSecurities(securities)
+      if (overrides.nonEmpty) {
+        val overridesElements: Element = request.getElement(Name.getName("overrides"))
+        overrides.foreach({ case (overrideKey, overrideValue) =>
+          val overridesElement: Element = overridesElements.appendElement
+          overridesElement.setElement(Name.getName("fieldId"), overrideKey)
+          overridesElement.setElement(Name.getName("value"), overrideValue)
+        })
+      }
+    }
+
+    override def validate(): RefDataConfig = {
+      require(securities.nonEmpty, "[securities] needs to be specified")
+      require(fields.nonEmpty, "[fields] needs to be specified")
+      //TODO: We should validate overrides parameters (both keys and values)
+      this
+    }
+
+    override def buildPartitions(options: CaseInsensitiveStringMap): Array[InputPartition] = {
+      LOGGER.info("Partitioning Reference data requests")
+      partitionBySecurities(options, securities).map(securities => {
+        this.copy(securities = securities)
+      })
+    }
+
+  }
+
+  case class MktDataConfig(
+                            securities: List[String] = List.empty,
+                            fields: List[String] = List.empty,
+                            returnEids: Option[Boolean] = None,
+                          ) extends SvcConfig {
+
+    override def buildRequest(request: Request): Unit = {
+      request.appendFields(fields)
+      request.appendSecurities(securities)
+      if (returnEids.isDefined) request.set(Name.getName("returnEids"), returnEids.get)
     }
 
     override def validate(): MktDataConfig = {
@@ -179,90 +281,31 @@ object BPipeConfig {
 
   }
 
-  /**
-   * Helper class to ensure BPipe request is built consistantly across multiple entry points
-   * @param request original request modified with input options like securities, fields, start or end date
-   */
-  implicit class RequestImpl(request: Request) {
 
-    val sdf = new SimpleDateFormat("yyyy-MM-dd")
-
-    def appendFields(fields: List[String]): Unit = {
-      fields.foreach(f => request.append("fields", f))
-    }
-
-    def appendSecurities(securities: List[String]): Unit = {
-      securities.foreach(s => request.append("securities", s))
-    }
-
-    def appendEventTypes(eventTypes: List[String]): Unit = {
-      eventTypes.foreach(e => request.append("eventTypes", e))
-    }
-
-    def setSecurity(security: String): Unit = {
-      request.set("security", security)
-    }
-
-    def setStartDateTime(startDateTime: Date): Unit = {
-      val startCalendar = Calendar.getInstance
-      startCalendar.setTime(startDateTime)
-      request.set("startDateTime", new Datetime(startCalendar))
-    }
-
-    def setEndDateTime(endDateTime: Date): Unit = {
-      val endCalendar = Calendar.getInstance
-      endCalendar.setTime(endDateTime)
-      request.set("endDateTime", new Datetime(endCalendar))
-    }
-
-    def setStartDate(startDate: Date): Unit = {
-      request.set("startDate", sdf.format(startDate))
-    }
-
-    def setEndDate(endDate: Date): Unit = {
-      request.set("endDate", sdf.format(endDate))
-    }
-
-    def setInterval(interval: Int): Unit = {
-      request.set("interval", interval)
-    }
-
-  }
-
-  case class RefDataConfig(
-                            securities: List[String] = List.empty,
-                            fields: List[String] = List.empty,
-                            overrides: Map[String, String] = Map.empty
-                          ) extends SvcConfig {
+  case class StaticMktDataConfig(
+                                  securities: List[String] = List.empty,
+                                  fields: List[String] = List.empty,
+                                  returnEids: Option[Boolean] = None,
+                                ) extends SvcConfig {
 
     override def buildRequest(request: Request): Unit = {
-
       request.appendFields(fields)
       request.appendSecurities(securities)
-      if (overrides.nonEmpty) {
-        val overridesElements: Element = request.getElement("overrides")
-        overrides.foreach({ case (overrideKey, overrideValue) =>
-          val overridesElement: Element = overridesElements.appendElement
-          overridesElement.setElement("fieldId", overrideKey)
-          overridesElement.setElement("value", overrideValue)
-        })
-      }
+      if (returnEids.isDefined) request.set(Name.getName("returnEids"), returnEids.get)
     }
 
-    override def validate(): RefDataConfig = {
+    override def validate(): StaticMktDataConfig = {
       require(securities.nonEmpty, "[securities] needs to be specified")
       require(fields.nonEmpty, "[fields] needs to be specified")
-      //TODO: We should validate overrides parameters (both keys and values)
       this
     }
 
     override def buildPartitions(options: CaseInsensitiveStringMap): Array[InputPartition] = {
-      LOGGER.info("Partitioning Reference data requests")
+      LOGGER.info("Partitioning Static Market data requests")
       partitionBySecurities(options, securities).map(securities => {
         this.copy(securities = securities)
       })
     }
-
   }
 
   case class RefDataHistoricalConfig(
@@ -287,14 +330,14 @@ object BPipeConfig {
       request.setStartDate(startDate)
       request.setEndDate(endDate)
 
-      if (periodicityAdjustment.isDefined) request.set("periodicityAdjustment", periodicityAdjustment.get)
-      if (periodicitySelection.isDefined) request.set("periodicitySelection", periodicitySelection.get)
-      if (pricingOption.isDefined) request.set("pricingOption", pricingOption.get)
-      if (adjustmentNormal.isDefined) request.set("adjustmentNormal", adjustmentNormal.get)
-      if (adjustmentAbnormal.isDefined) request.set("adjustmentAbnormal", adjustmentAbnormal.get)
-      if (adjustmentSplit.isDefined) request.set("adjustmentSplit", adjustmentSplit.get)
-      if (maxDataPoints.isDefined) request.set("maxDataPoints", maxDataPoints.get)
-      if (overrideOption.isDefined) request.set("overrideOption", overrideOption.get)
+      if (periodicityAdjustment.isDefined) request.set(Name.getName("periodicityAdjustment"), periodicityAdjustment.get)
+      if (periodicitySelection.isDefined) request.set(Name.getName("periodicitySelection"), periodicitySelection.get)
+      if (pricingOption.isDefined) request.set(Name.getName("pricingOption"), pricingOption.get)
+      if (adjustmentNormal.isDefined) request.set(Name.getName("adjustmentNormal"), adjustmentNormal.get)
+      if (adjustmentAbnormal.isDefined) request.set(Name.getName("adjustmentAbnormal"), adjustmentAbnormal.get)
+      if (adjustmentSplit.isDefined) request.set(Name.getName("adjustmentSplit"), adjustmentSplit.get)
+      if (maxDataPoints.isDefined) request.set(Name.getName("maxDataPoints"), maxDataPoints.get)
+      if (overrideOption.isDefined) request.set(Name.getName("overrideOption"), overrideOption.get)
 
     }
 
@@ -354,19 +397,19 @@ object BPipeConfig {
 
     override def buildRequest(request: Request): Unit = {
 
-      request.set("security", security)
+      request.set(Name.getName("security"), security)
       request.setSecurity(security)
       request.appendEventTypes(eventTypes)
       request.setStartDateTime(startDateTime)
       request.setEndDateTime(endDateTime)
 
-      if (includeConditionCodes.isDefined) request.set("includeConditionCodes", includeConditionCodes.get)
-      if (includeBicMicCodes.isDefined) request.set("includeBicMicCodes", includeBicMicCodes.get)
-      if (includeBrokerCodes.isDefined) request.set("includeBrokerCodes", includeBrokerCodes.get)
-      if (includeRpsCodes.isDefined) request.set("includeRpsCodes", includeRpsCodes.get)
-      if (includeExchangeCodes.isDefined) request.set("includeExchangeCodes", includeExchangeCodes.get)
-      if (includeNonPlottableEvents.isDefined) request.set("includeNonPlottableEvents", includeNonPlottableEvents.get)
-      if (returnEids.isDefined) request.set("returnEids", returnEids.get)
+      if (includeConditionCodes.isDefined) request.set(Name.getName("includeConditionCodes"), includeConditionCodes.get)
+      if (includeBicMicCodes.isDefined) request.set(Name.getName("includeBicMicCodes"), includeBicMicCodes.get)
+      if (includeBrokerCodes.isDefined) request.set(Name.getName("includeBrokerCodes"), includeBrokerCodes.get)
+      if (includeRpsCodes.isDefined) request.set(Name.getName("includeRpsCodes"), includeRpsCodes.get)
+      if (includeExchangeCodes.isDefined) request.set(Name.getName("includeExchangeCodes"), includeExchangeCodes.get)
+      if (includeNonPlottableEvents.isDefined) request.set(Name.getName("includeNonPlottableEvents"), includeNonPlottableEvents.get)
+      if (returnEids.isDefined) request.set(Name.getName("returnEids"), returnEids.get)
     }
 
     override def validate(): RefDataTickDataConfig = {
@@ -409,13 +452,13 @@ object BPipeConfig {
       request.setEndDateTime(endDateTime)
       request.setInterval(interval)
 
-      if (eventType.isDefined) request.set("eventType", eventType.get)
-      if (returnEids.isDefined) request.set("returnEids", returnEids.get)
-      if (gapFillInitialBar.isDefined) request.set("gapFillInitialBar", gapFillInitialBar.get)
-      if (adjustmentNormal.isDefined) request.set("adjustmentNormal", adjustmentNormal.get)
-      if (adjustmentAbnormal.isDefined) request.set("adjustmentAbnormal", adjustmentAbnormal.get)
-      if (adjustmentSplit.isDefined) request.set("adjustmentSplit", adjustmentSplit.get)
-      if (adjustmentFollowDPDF.isDefined) request.set("adjustmentFollowDPDF", adjustmentFollowDPDF.get)
+      if (eventType.isDefined) request.set(Name.getName("eventType"), eventType.get)
+      if (returnEids.isDefined) request.set(Name.getName("returnEids"), returnEids.get)
+      if (gapFillInitialBar.isDefined) request.set(Name.getName("gapFillInitialBar"), gapFillInitialBar.get)
+      if (adjustmentNormal.isDefined) request.set(Name.getName("adjustmentNormal"), adjustmentNormal.get)
+      if (adjustmentAbnormal.isDefined) request.set(Name.getName("adjustmentAbnormal"), adjustmentAbnormal.get)
+      if (adjustmentSplit.isDefined) request.set(Name.getName("adjustmentSplit"), adjustmentSplit.get)
+      if (adjustmentFollowDPDF.isDefined) request.set(Name.getName("adjustmentFollowDPDF"), adjustmentFollowDPDF.get)
 
     }
 
@@ -439,12 +482,22 @@ object BPipeConfig {
 
   }
 
-  object ApiConfig {
-    def apply(options: CaseInsensitiveStringMap): ApiConfig = {
-      ApiConfig(
-        options.getString("serviceHost"),
-        options.getInt("servicePort"),
-        options.getLong("correlationId")
+  object BpipeApiConfig {
+    def apply(options: CaseInsensitiveStringMap): BpipeApiConfig = {
+
+      require(new java.io.File(options.getString("tlsCertificatePath")).exists(),
+        s"TLS certificate file does not exist")
+      require(new java.io.File(options.getString("tlsPrivateKeyPath")).exists(),
+        s"TLS private key file does not exist")
+
+      BpipeApiConfig(
+        serverAddresses = options.getStringList("serverAddresses").toArray,
+        serverPort = options.getInt("serverPort"),
+        tlsCertificatePath = options.getString("tlsCertificatePath"),
+        tlsPrivateKeyPath = options.getString("tlsPrivateKeyPath"),
+        tlsPrivateKeyPassword = options.getString("tlsPrivateKeyPassword"),
+        authApplicationName = options.getString("authApplicationName"),
+        correlationId = options.getLong("correlationId")
       )
     }
   }
@@ -453,7 +506,18 @@ object BPipeConfig {
     def apply(options: CaseInsensitiveStringMap): MktDataConfig = {
       MktDataConfig(
         options.getStringList("securities"),
-        options.getStringList("fields")
+        options.getStringList("fields"),
+        options.getBooleanOpt("returnEids")
+      )
+    }
+  }
+
+  object StaticMktDataConfig {
+    def apply(options: CaseInsensitiveStringMap): StaticMktDataConfig = {
+      StaticMktDataConfig(
+        options.getStringList("securities"),
+        options.getStringList("fields"),
+        options.getBooleanOpt("returnEids")
       )
     }
   }
@@ -522,5 +586,4 @@ object BPipeConfig {
       )
     }
   }
-
 }
