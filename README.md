@@ -69,7 +69,7 @@ market_stream = (
       .option("securities", "['BBHBEAT Index', 'GBP BGN Curncy', 'EUR BGN Curncy', 'JPYEUR BGN Curncy']")
 
       // Custom logic
-      .option("timezone", "America/New_York")
+      .option("timezone", "UTC")
       .option("permissive", value = true)
       
       .load()
@@ -137,7 +137,7 @@ We support 3 modes of partitioning.
   explicitly tell framework which securities will be bundled together across multiple partitions, ensuring better
   latency and resilience in a distributed environment.
 
-See notebook [02_bpipe_partitioning.ipynb](databricks%2F02_bpipe_partitioning.ipynb) for more information about
+See notebook [03_bpipe_partitioning.ipynb](databricks%2F03_bpipe_partitioning.ipynb) for more information about
 partitioning. This partitioning logic can be visualized as follows
 
 ![images](images/smart_partitioning.png)
