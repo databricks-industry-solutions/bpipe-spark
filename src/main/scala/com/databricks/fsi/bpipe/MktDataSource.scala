@@ -12,11 +12,11 @@ class MktDataSource extends TableProvider with DataSourceRegister {
 
   override def inferSchema(options: CaseInsensitiveStringMap): StructType = {
     StructType(
-      StructField(BPipeFields.Response.SECURITY, StringType, nullable = false) +:
+      StructField(BPipeFields.Response.SECURITY, StringType, nullable = true) +:
         options.getStringList("fields").map(field => {
           if (BPipeFields.Request.fields.contains(field)) {
             // TODO: Establish initial connection to B-PIPE (//blp/fields) to get access to field specification
-            StructField(field, BPipeFields.Request.fields(field), nullable = false)
+            StructField(field, BPipeFields.Request.fields(field), nullable = true)
           } else {
             throw new IllegalArgumentException(s"[fields] not supported $field")
           }

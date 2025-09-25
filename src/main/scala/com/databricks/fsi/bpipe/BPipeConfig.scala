@@ -23,11 +23,7 @@ object BPipeConfig {
     "AT_TRADE",
     "SETTLE",
     "BEST_BID",
-    "BEST_ASK",
-    "MKTDATA_EVENT_TYPE",
-    "MKTDATA_EVENT_SUBTYPE",
-    "EID",
-    "IS_DELAYED_STREAM"
+    "BEST_ASK"
   )
   private val validPeriodicityAdjustment = Set(
     "ACTUAL",

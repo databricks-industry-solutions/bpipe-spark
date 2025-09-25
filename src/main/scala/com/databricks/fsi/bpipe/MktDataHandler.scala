@@ -73,7 +73,7 @@ object MktDataHandler {
           None
         } else {
           // TODO: Find depreciated replacement
-          val security = message.topicName
+          val security = message.topicName.split("\\?").head
           val writer = new UnsafeRowWriter(schema.length)
           writer.resetRowWriter()
 
@@ -88,10 +88,7 @@ object MktDataHandler {
               case _ => if (fieldValues.contains(requiredField.name)) {
                 writer.writeElement(requiredIndex, fieldValues(requiredField.name), timezone)
               } else {
-                requiredField.dataType match {
-                  case ArrayType(StringType, true) => writer.writeStringArray(requiredIndex, Seq.empty[String])
-                  case _ => writer.setNullAt(requiredIndex)
-                }
+                writer.setNullAt(requiredIndex)
               }
             }
           })
@@ -136,7 +133,7 @@ object MktDataHandler {
 
     private val LOGGER = LoggerFactory.getLogger(this.getClass)
     private val queue: BlockingQueue[UnsafeRow] = new LinkedBlockingDeque[UnsafeRow]()
-    private val timeout = 10000 // Fails  if communication from multiple threads cannot be fully established after 10sec
+    private val timeout = 30000 // Fails  if communication from multiple threads cannot be fully established after 10sec
     private val mktConfig = svcConfig.asInstanceOf[MktDataConfig]
     private var session: Session = _
     private var event: UnsafeRow = _

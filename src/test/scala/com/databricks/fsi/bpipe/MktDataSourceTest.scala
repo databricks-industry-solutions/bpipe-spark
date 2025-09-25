@@ -15,8 +15,8 @@ class MktDataSourceTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll
     val options = new CaseInsensitiveStringMap(optionsMap.asJava)
     val ddl = new MktDataSource().inferSchema(options).toDDL
     require(ddl ==
-      """SECURITY STRING NOT NULL,BID DOUBLE NOT NULL,
-        |TICKER STRING NOT NULL""".stripMargin.replaceAll("\n", ""))
+      """SECURITY STRING,BID DOUBLE,
+        |TICKER STRING""".stripMargin.replaceAll("\n", ""))
   }
 
   it should "fail if fields are not specified" in {
