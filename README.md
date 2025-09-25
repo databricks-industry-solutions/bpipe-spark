@@ -52,11 +52,11 @@ and lineage through unity catalog. A B-Pipe feed of market data must be limited 
 market_stream = (
 
     spark
-      // mktData is a streaming endpoint
+      # mktData is a streaming endpoint
       .readStream
       .format("//blp/mktData")
 
-      // B-PIPE connection
+      # B-PIPE connection
       .option("serverAddresses", "['SERVER1', 'SERVER2']")
       .option("serverPort", 8194)
       .option("tlsCertificatePath", "/path/to/rootCertificate.pk7")
@@ -64,11 +64,11 @@ market_stream = (
       .option("tlsPrivateKeyPassword", "password")
       .option("authApplicationName", "app+name")
 
-      // Service configuration
+      # Service configuration
       .option("fields", "['MKTDATA_EVENT_TYPE','MKTDATA_EVENT_SUBTYPE','EID','BID','ASK','IS_DELAYED_STREAM','TRADE_UPDATE_STAMP_RT']")
       .option("securities", "['BBHBEAT Index', 'GBP BGN Curncy', 'EUR BGN Curncy', 'JPYEUR BGN Curncy']")
 
-      // Custom logic
+      # Custom logic
       .option("timezone", "UTC")
       .option("permissive", value = true)
       
@@ -95,11 +95,11 @@ parameters.
 reference_df = (
     
     spark
-      // staticMktData is a batch endpoint
+      # staticMktData is a batch endpoint
       .read
       .format("//blp/staticMktData")
 
-      // B-PIPE connection
+      # B-PIPE connection
       .option("serverAddresses", "['SERVER1', 'SERVER2']")
       .option("serverPort", 8194)
       .option("tlsCertificatePath", "/path/to/rootCertificate.pk7")
@@ -108,13 +108,13 @@ reference_df = (
       .option("authApplicationName", "app+name")
       .option("correlationId", 999)
 
-      // Service configuration
+      # Service configuration
       .option("serviceName", "ReferenceDataRequest")
       .option("fields", "['EID', 'BID', 'ASK', 'LAST_PRICE']")
       .option("securities", "['BBHBEAT Index', 'GBP BGN Curncy', 'EUR BGN Curncy', 'JPYEUR BGN Curncy']")
       .option("returnEids", true)
 
-      // Start batch ingest
+      # Start batch ingest
       .load()
 )
 ```
