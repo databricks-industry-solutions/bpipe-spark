@@ -2,6 +2,7 @@ package com.databricks.fsi.bpipe
 
 import com.bloomberglp.blpapi.{Datetime, Element, Name, Request}
 import com.google.gson.Gson
+import org.apache.commons.io.IOUtils
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.connector.read.InputPartition
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -12,6 +13,16 @@ import java.util.{Calendar, Date}
 import scala.annotation.tailrec
 
 object BPipeConfig {
+
+  private def isInClassPath(resourceName: String): Boolean = {
+    try {
+      val stream = BPipeConfig.getClass.getResourceAsStream(resourceName)
+      IOUtils.toByteArray(stream)
+      true
+    } catch {
+      case _: Throwable => false
+    }
+  }
 
   private val validEventTypes = Set(
     "TRADE",
@@ -482,12 +493,13 @@ object BPipeConfig {
 
   }
 
+
   object BpipeApiConfig {
     def apply(options: CaseInsensitiveStringMap): BpipeApiConfig = {
 
-      require(new java.io.File(options.getString("tlsCertificatePath")).exists(),
+      require(isInClassPath(options.getString("tlsCertificatePath")),
         s"TLS certificate file does not exist")
-      require(new java.io.File(options.getString("tlsPrivateKeyPath")).exists(),
+      require(isInClassPath(options.getString("tlsPrivateKeyPath")),
         s"TLS private key file does not exist")
 
       BpipeApiConfig(

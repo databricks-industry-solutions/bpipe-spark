@@ -62,6 +62,8 @@
         <scala.binary.version>2.12</scala.binary.version>
         <spark.version>3.5.0</spark.version>
         <java.version>11</java.version>
+        <bloomberg.jar.path>/path/to/blpapi-3.25.3-1.jar</bloomberg.jar.path>
+        <bloomberg.certificates.path>/path/to/certificates</bloomberg.certificates.path>
     </properties>
 
     <dependencies>
@@ -156,6 +158,34 @@
                             <goal>doc-jar</goal>
                             <goal>add-source</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Maven resources plugin for external certificates -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-certificates</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/certificates</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${bloomberg.certificates.path}</directory>
+                                    <includes>
+                                        <include>*.pk12</include>
+                                        <include>*.pk7</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

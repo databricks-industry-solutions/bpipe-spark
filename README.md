@@ -59,8 +59,8 @@ market_stream = (
       # B-PIPE connection
       .option("serverAddresses", "['SERVER1', 'SERVER2']")
       .option("serverPort", 8194)
-      .option("tlsCertificatePath", "/path/to/rootCertificate.pk7")
-      .option("tlsPrivateKeyPath", "/path/to/privateKey.pk12")
+      .option("tlsCertificatePath", "rootCertificate.pk7")  # on classpath
+      .option("tlsPrivateKeyPath", "privateKey.pk12")  # on classpath
       .option("tlsPrivateKeyPassword", "password")
       .option("authApplicationName", "app+name")
 
@@ -102,8 +102,8 @@ reference_df = (
       # B-PIPE connection
       .option("serverAddresses", "['SERVER1', 'SERVER2']")
       .option("serverPort", 8194)
-      .option("tlsCertificatePath", "/path/to/rootCertificate.pk7")
-      .option("tlsPrivateKeyPath", "/path/to/privateKey.pk12")
+      .option("tlsCertificatePath", "rootCertificate.pk7") # on classpath
+      .option("tlsPrivateKeyPath", "privateKey.pk12")  # on classpath
       .option("tlsPrivateKeyPassword", "password")
       .option("authApplicationName", "app+name")
       .option("correlationId", 999)
@@ -146,11 +146,13 @@ partitioning. This partitioning logic can be visualized as follows
 
 Download B-Pipe library available on DATA<GO> [website](https://data.bloomberg.com/) and run the following maven
 command. This will build a jar file that can be installed on a databricks environment as external library (
-see [cluster libraries](https://docs.databricks.com/aws/en/libraries/cluster-libraries)).
+see [cluster libraries](https://docs.databricks.com/aws/en/libraries/cluster-libraries)). Make sure to include a 
+directory that include certificate and private keys to be made available on executors' classpath.
 
 ```shell
 mvn clean install \
-  -Dbloomberg.jar.path=/path/to/blpapi-3.19.1-1.jar
+  -Dbloomberg.jar.path=/path/to/blpapi-3.19.1-1.jar \
+  -Dbloomberg.cert.path=/path/to/bpipe-certificates
 ```
 
 ## References

@@ -9,11 +9,10 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
 import org.apache.spark.sql.catalyst.expressions.codegen.UnsafeRowWriter
 import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader, PartitionReaderFactory}
-import org.apache.spark.sql.types.{ArrayType, StringType, StructType}
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.unsafe.types.UTF8String
 import org.slf4j.LoggerFactory
 
-import java.io.{File, FileInputStream}
 import java.time.ZoneId
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 import scala.collection.JavaConverters._
@@ -148,9 +147,9 @@ object MktDataHandler {
       }
       sessionOptions.setServerAddresses(serverAddresses)
       sessionOptions.setTlsOptions(TlsOptions.createFromBlobs(
-        IOUtils.toByteArray(new FileInputStream(new File(apiConfig.tlsPrivateKeyPath))),
+        IOUtils.toByteArray(this.getClass.getResourceAsStream(apiConfig.tlsPrivateKeyPath)),
         apiConfig.tlsPrivateKeyPassword.toCharArray,
-        IOUtils.toByteArray(new FileInputStream(new File(apiConfig.tlsCertificatePath)))
+        IOUtils.toByteArray(this.getClass.getResourceAsStream(apiConfig.tlsCertificatePath))
       ))
       val authOptions = new AuthOptions(new AuthApplication(apiConfig.authApplicationName))
       sessionOptions.setSessionIdentityOptions(authOptions)

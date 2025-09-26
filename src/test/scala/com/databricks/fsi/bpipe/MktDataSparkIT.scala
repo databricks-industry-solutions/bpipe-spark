@@ -28,17 +28,18 @@ class MktDataSparkIT extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
       .format("//blp/mktdata")
 
       // B-PIPE connection
-      .option("serverAddresses", "['gbr.cloudpoint.bloomberg.com', 'deu.cloudpoint.bloomberg.com']")
+      .option("serverAddresses", "['SERVER1', 'SERVER2']")
       .option("serverPort", 8194)
-      .option("tlsCertificatePath", "/Users/antoine.amend/Workspace/bloomberg/bpipe-spark/credentials/rootCertificate.pk7")
-      .option("tlsPrivateKeyPath", "/Users/antoine.amend/Workspace/bloomberg/bpipe-spark/credentials/073BE6888AE987A5FC5C3C288CBC89E3.pk12")
-      .option("tlsPrivateKeyPassword", "VcRC3uY48vp2wZj5")
-      .option("authApplicationName", "blp:dbx-src-test")
+      .option("tlsCertificatePath", "/path/to/rootCertificate.pk7")
+      .option("tlsPrivateKeyPath", "/path/to/privateKey.pk12")
+      .option("tlsPrivateKeyPassword", "password")
+      .option("authApplicationName", "APP_NAME")
       .option("correlationId", 999)
 
       // Service configuration
-      .option("fields", "['MKTDATA_EVENT_TYPE','MKTDATA_EVENT_SUBTYPE','EID','BID','ASK','IS_DELAYED_STREAM','LAST_UPDATE_ASK_RT','LAST_UPDATE_BID_RT','TRADE_UPDATE_STAMP_RT']")
-      .option("securities", "['0UU5C 95.3750 COMB Comdty']")
+      .option("fields", "['MKTDATA_EVENT_TYPE','MKTDATA_EVENT_SUBTYPE','EID','BID','ASK','IS_DELAYED_STREAM','TRADE_UPDATE_STAMP_RT']")
+      .option("securities", "['BBHBEAT Index', 'GBP BGN Curncy', 'EUR BGN Curncy', 'JPYEUR BGN Curncy']")
+
       // Custom logic
       .option("timezone", "America/New_York")
       .option("permissive", value = false)

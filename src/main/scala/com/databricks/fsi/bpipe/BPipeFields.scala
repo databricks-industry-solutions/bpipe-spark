@@ -21,6 +21,11 @@ object BPipeFields {
       "MKTDATA_EVENT_SUBTYPE" -> StringType,
       "IS_DELAYED_STREAM" -> BooleanType,
       "EID" -> LongType,
+      "NAME_RT" -> StringType,
+      "SECURITY_DESCRIPTION_RT" -> StringType,
+      "BID_SIZE" -> IntegerType,
+      "ASK_SIZE" -> IntegerType,
+      "SIZE_LAST_TRADE" -> IntegerType,
       "VOLUME" -> LongType
     )
   }

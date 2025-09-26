@@ -55,9 +55,9 @@ object StaticMktDataHandler {
       }
       sessionOptions.setServerAddresses(serverAddresses)
       sessionOptions.setTlsOptions(TlsOptions.createFromBlobs(
-        IOUtils.toByteArray(new FileInputStream(new File(apiConfig.tlsPrivateKeyPath))),
+        IOUtils.toByteArray(this.getClass.getResourceAsStream(apiConfig.tlsPrivateKeyPath)),
         apiConfig.tlsPrivateKeyPassword.toCharArray,
-        IOUtils.toByteArray(new FileInputStream(new File(apiConfig.tlsCertificatePath)))
+        IOUtils.toByteArray(this.getClass.getResourceAsStream(apiConfig.tlsCertificatePath))
       ))
       val authOptions = new AuthOptions(new AuthApplication(apiConfig.authApplicationName))
       sessionOptions.setSessionIdentityOptions(authOptions)

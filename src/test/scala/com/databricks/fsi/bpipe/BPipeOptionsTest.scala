@@ -7,32 +7,13 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
-import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import scala.collection.JavaConverters._
 
 class BPipeOptionsTest extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
-  private var tempCertFile: Path = _
-  private var tempKeyFile: Path = _
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    // Create temporary certificate files for StaticMktDataApiConfig tests
-    tempCertFile = Files.createTempFile("test-cert", ".p12")
-    tempKeyFile = Files.createTempFile("test-key", ".p12")
-
-    // Write some dummy content to make the files exist
-    Files.write(tempCertFile, "dummy certificate content".getBytes)
-    Files.write(tempKeyFile, "dummy key content".getBytes)
-  }
-
-  override def afterAll(): Unit = {
-    // Clean up temporary files
-    if (tempCertFile != null) Files.deleteIfExists(tempCertFile)
-    if (tempKeyFile != null) Files.deleteIfExists(tempKeyFile)
-    super.afterAll()
-  }
+  private val tempCertFile = "/dummy_crt.pk7"
+  private val tempKeyFile = "/dummy_key.pk12"
 
   "Options" should "be parsed" in {
 
