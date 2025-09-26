@@ -14,16 +14,6 @@ import scala.annotation.tailrec
 
 object BPipeConfig {
 
-  private def isInClassPath(resourceName: String): Boolean = {
-    try {
-      val stream = BPipeConfig.getClass.getResourceAsStream(resourceName)
-      IOUtils.toByteArray(stream)
-      true
-    } catch {
-      case _: Throwable => false
-    }
-  }
-
   private val validEventTypes = Set(
     "TRADE",
     "BID",
@@ -58,6 +48,16 @@ object BPipeConfig {
     "OVERRIDE_OPTION_CLOSE"
   )
   private val LOGGER = LoggerFactory.getLogger(BPipeConfig.getClass)
+
+  private def isInClassPath(resourceName: String): Boolean = {
+    try {
+      val stream = BPipeConfig.getClass.getResourceAsStream(resourceName)
+      IOUtils.toByteArray(stream)
+      true
+    } catch {
+      case _: Throwable => false
+    }
+  }
 
   /**
    * Use might define partitioning strategy to leverage distributed nature of Spark Streaming. With multiple nodes

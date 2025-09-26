@@ -13,7 +13,6 @@ import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 import org.slf4j.LoggerFactory
 
-import java.io.{File, FileInputStream}
 import java.time.ZoneId
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}

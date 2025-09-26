@@ -12,9 +12,9 @@ systems. Unlike Bloomberg Terminal (for humans), B-Pipe powers automated trading
 systems, and analytics applications. It is designed for low-latency, high-reliability, institutional use.
 Data from B-Pipe often must be published into a firm’s internal message bus (e.g. Kafka) to decouple raw Bloomberg
 sessions from consuming applications, adding operational overhead, increasing latency and requiring complex mapping and
-transformation. We introduce a lightweight, open-source connector that allows Databricks customers to directly stream 
-B-Pipe data into Spark (and Spark Streaming) pipelines without relying on intermediate enterprise buses or heavy 
-middleware, simplifying architecture and enabling real-time analytics whilst ensuring built-in support for bloomberg 
+transformation. We introduce a lightweight, open-source connector that allows Databricks customers to directly stream
+B-Pipe data into Spark (and Spark Streaming) pipelines without relying on intermediate enterprise buses or heavy
+middleware, simplifying architecture and enabling real-time analytics whilst ensuring built-in support for bloomberg
 entitlements and audit trails through unity catalog.
 
 <br>
@@ -39,7 +39,8 @@ Platform.
 ### Market data
 
 `//blp/mktdata` is the Bloomberg API service that streams real-time market data (quotes, trades, market depth) to client
-applications by subscription. Live data from the exchanges, it is critical to ensure delivery to specific applications only by tracking entitlement
+applications by subscription. Live data from the exchanges, it is critical to ensure delivery to specific applications
+only by tracking entitlement
 and lineage through unity catalog. A B-Pipe feed of market data must be limited to a given application only.
 
 |                |                     |
@@ -146,7 +147,7 @@ partitioning. This partitioning logic can be visualized as follows
 
 Download B-Pipe library available on DATA<GO> [website](https://data.bloomberg.com/) and run the following maven
 command. This will build a jar file that can be installed on a databricks environment as external library (
-see [cluster libraries](https://docs.databricks.com/aws/en/libraries/cluster-libraries)). Make sure to include a 
+see [cluster libraries](https://docs.databricks.com/aws/en/libraries/cluster-libraries)). Make sure to include a
 directory that include certificate and private keys to be made available on executors' classpath.
 
 ```shell
